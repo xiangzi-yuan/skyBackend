@@ -360,5 +360,191 @@ sky:
 
 
 
+---------------------------
+
+### 项目内容
+
+为什么前端请求
+
+http://localhost/api/employee/login
+
+后端能收到
+
+通过nginx反向代理,将前端发送的动态请求由nginx转发到后端服务器
+
+![image-20251218133515901](./assets/image-20251218133515901.png)
+
+1. nginx 缓存,提高访问速度
+2. 堵在均衡,所谓负载均衡,就是把大量的请求按照我们指定的方式均衡的分配给集群中的每台服务器
+
+<img src="./assets/image-20251218133616395.png" alt="image-20251218133616395" style="zoom:33%;" />
+
+3. 保证后端服务安全
 
 
+
+如何设置:
+
+
+
+nginx.conf 文件
+
+反向代理:
+
+        # 反向代理,处理管理端发送的请求
+        location /api/ {
+    		proxy_pass   http://localhost:8080/admin/;
+        }
+
+匹配到 /api/xxx 就转发到  http://localhost:8080/admin/xxx
+
+
+
+负载均衡:
+
+<img src="./assets/image-20251218134646731.png" alt="image-20251218134646731" style="zoom:50%;" />
+
+匹配到之后自动 设置服务器负载
+
+<img src="./assets/image-20251218134943878.png" alt="image-20251218134943878" style="zoom:50%;" />
+
+
+
+
+
+**完善登录功能**
+
+1.数据库密码加密
+
+改为bcrypt加密
+
+A.
+
+SERER模块
+
+```xml
+<dependency>
+    <groupId>org.springframework.security</groupId>
+    <artifactId>spring-security-crypto</artifactId>
+</dependency>
+```
+
+application-dev.yml添加
+
+```xml
+security:
+  password:
+    bcrypt-cost: 12
+```
+
+sky-config下面:
+
+新建类:
+
+PasswordConfiguration.java
+
+```java
+package com.sky.config;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+@Configuration
+public class PasswordConfiguration {
+
+    @Bean
+    public PasswordEncoder passwordEncoder(SecurityPasswordProperties props) {
+        return new BCryptPasswordEncoder(props.getBcryptCost());
+    }
+}
+
+```
+
+加一个属性类
+
+```java
+package com.sky.config;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+@Component
+@ConfigurationProperties(prefix = "security.password")
+public class SecurityPasswordProperties {
+    private int bcryptCost = 12;
+    public int getBcryptCost() { return bcryptCost; }
+    public void setBcryptCost(int bcryptCost) { this.bcryptCost = bcryptCost; }
+}
+
+```
+
+
+
+修改login函数
+
+```java
+import org.springframework.security.crypto.password.PasswordEncoder; // 哈希校验
+@Override
+    public Employee login(EmployeeLoginDTO employeeLoginDTO) {
+        String username = employeeLoginDTO.getUsername();
+        String password = employeeLoginDTO.getPassword();
+
+        //1、根据用户名查询数据库中的数据
+        Employee employee = employeeMapper.getByUsername(username);
+
+        //2、处理各种异常情况（用户名不存在、密码不对、账号被锁定）
+        if (employee == null) {
+            //账号不存在
+            throw new AccountNotFoundException(MessageConstant.ACCOUNT_NOT_FOUND);
+        }
+
+        //密码比对
+
+        // password：前端传来的明文
+        // employee.getPassword()：数据库里存的 bcrypt 哈希串（例如 $2b$12$...）
+        if (!passwordEncoder.matches(password, employee.getPassword())) {
+            throw new PasswordErrorException(MessageConstant.PASSWORD_ERROR);
+        }
+
+        if (employee.getStatus() == StatusConstant.DISABLE) {
+            //账号被锁定
+            throw new AccountLockedException(MessageConstant.ACCOUNT_LOCKED);
+        }
+
+        //3、返回实体对象
+        return employee;
+    }
+```
+
+创建临时类 修改数据库密码测试
+
+```java
+package com.sky;
+
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+public class temp {
+    public static void main(String[] args) {
+        PasswordEncoder pe = new BCryptPasswordEncoder(12);
+        System.out.println(pe.encode("123456"));
+    }
+}
+```
+
+```
+$2a$12$9/Wa/2.RM6YIZWr8bM9xjudaoarqQ7c.Ygd2W757t7V.jzjBRWj9O
+```
+
+删除这个类
+
+
+
+测试成功
+
+
+
+
+
+![image-20251218194922256](./assets/image-20251218194922256.png)
