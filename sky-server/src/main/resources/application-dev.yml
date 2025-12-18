@@ -10,3 +10,6 @@ sky:
     database: sky_take_out
     username: ${DB_USERNAME:}
     password: ${DB_PASSWORD:}
+security:
+  password:
+    bcrypt-cost: 12
