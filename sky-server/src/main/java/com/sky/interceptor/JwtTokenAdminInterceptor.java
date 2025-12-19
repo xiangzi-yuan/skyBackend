@@ -1,6 +1,7 @@
 package com.sky.interceptor;
 
 import com.sky.constant.JwtClaimsConstant;
+import com.sky.context.BaseContext;
 import com.sky.properties.JwtProperties;
 import com.sky.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
@@ -11,7 +12,10 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
+import com.sky.mapper.EmployeeMapper;
+import com.sky.result.Result;
+import com.sky.constant.MessageConstant;
+import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * jwt令牌校验的拦截器
  */
@@ -21,6 +25,12 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
 
     @Autowired
     private JwtProperties jwtProperties;
+
+    @Autowired
+    private EmployeeMapper employeeMapper;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     /**
      * 校验jwt
@@ -41,18 +51,53 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
         //1、从请求头中获取令牌
         String token = request.getHeader(jwtProperties.getAdminTokenName());
 
+        // 1.1 token 为空直接 401
+        if (token == null || token.isBlank()) {
+            response.setStatus(401);
+            return false;
+        }
         //2、校验令牌
         try {
-            log.info("jwt校验:{}", token);
+            log.info("jwt校验: tokenPrefix={}", token.substring(0, Math.min(10, token.length())));
             Claims claims = JwtUtil.parseJWT(jwtProperties.getAdminSecretKey(), token);
             Long empId = Long.valueOf(claims.get(JwtClaimsConstant.EMP_ID).toString());
-            log.info("当前员工id：", empId);
+            log.info("当前员工id：{}", empId);
+
+            BaseContext.setCurrentId(empId);
+
+            // 强制改密
+            // 白名单：登录/登出/改密接口允许访问
+            String uri = request.getRequestURI();
+            if ("/admin/employee/login".equals(uri)
+                    || "/admin/employee/logout".equals(uri)
+                    || "/admin/employee/editPassword".equals(uri)) {
+                return true;
+            }
+
+
+            Integer pwdChanged = employeeMapper.getPwdChangedById(empId);
+            if (pwdChanged == null || pwdChanged == 0) {
+                response.setStatus(403);
+                response.setContentType("application/json;charset=UTF-8");
+
+                Result<Object> r = Result.error(MessageConstant.PASSWORD_NEED_CHANGE);
+                String json = objectMapper.writeValueAsString(r);
+
+                response.getWriter().write(json);
+                return false;
+            }
+
             //3、通过，放行
             return true;
+
         } catch (Exception ex) {
             //4、不通过，响应401状态码
             response.setStatus(401);
             return false;
         }
+    }
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        BaseContext.removeCurrentId();
     }
 }

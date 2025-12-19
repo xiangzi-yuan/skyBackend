@@ -1,7 +1,10 @@
 package com.sky.controller.admin;
 
 import com.sky.constant.JwtClaimsConstant;
+import com.sky.context.BaseContext;
+import com.sky.dto.EmployeeCreateDTO;
 import com.sky.dto.EmployeeLoginDTO;
+import com.sky.dto.PasswordEditDTO;
 import com.sky.entity.Employee;
 import com.sky.properties.JwtProperties;
 import com.sky.result.Result;
@@ -11,10 +14,7 @@ import com.sky.vo.EmployeeLoginVO;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +41,7 @@ public class EmployeeController {
     @PostMapping("/login")
     @ApiOperation("员工登录")
     public Result<EmployeeLoginVO> login(@RequestBody EmployeeLoginDTO employeeLoginDTO) {
-        log.info("员工登录：{}", employeeLoginDTO);
+        log.info("员工登录：{}", employeeLoginDTO.getUsername());
 
         Employee employee = employeeService.login(employeeLoginDTO);
 
@@ -58,6 +58,7 @@ public class EmployeeController {
                 .userName(employee.getUsername())
                 .name(employee.getName())
                 .token(token)
+                .needChangePassword(employee.getPwdChanged() == null || employee.getPwdChanged() == 0)
                 .build();
 
         return Result.success(employeeLoginVO);
@@ -74,4 +75,30 @@ public class EmployeeController {
         return Result.success();
     }
 
+    /**
+     * 新增员工
+     * @param employeeCreateDTO
+     * @return
+     */
+    @PostMapping
+    @ApiOperation("新增员工")
+    public Result<String> saveEmployee(@RequestBody EmployeeCreateDTO employeeCreateDTO){
+        log.info("新增员工：username={}", employeeCreateDTO.getUsername());
+        employeeService.save(employeeCreateDTO);
+        return Result.success();
+    }
+
+    /**
+     * 修改密码
+     * @param passwordEditDTO
+     * @return
+     */
+    @PutMapping("/editPassword")
+    @ApiOperation("修改密码")
+    public Result<String> changePassword(@RequestBody PasswordEditDTO passwordEditDTO){
+        Long empId = BaseContext.getCurrentId();
+        log.info("修改密码：empId={}", empId);
+        employeeService.changePassword(passwordEditDTO);
+        return Result.success();
+    }
 }
