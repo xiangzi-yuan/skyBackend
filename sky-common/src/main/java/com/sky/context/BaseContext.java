@@ -1,19 +1,17 @@
 package com.sky.context;
 
+import com.sky.role.RoleLevel;
+
 public class BaseContext {
+    private static final ThreadLocal<Long> currentId = new ThreadLocal<>();
+    private static final ThreadLocal<RoleLevel> currentRole = new ThreadLocal<>();
 
-    public static ThreadLocal<Long> threadLocal = new ThreadLocal<>();
+    public static void setCurrentId(Long id) { currentId.set(id); }
+    public static Long getCurrentId() { return currentId.get(); }
 
-    public static void setCurrentId(Long id) {
-        threadLocal.set(id);
-    }
+    public static void setCurrentRole(RoleLevel role) { currentRole.set(role); }
+    public static RoleLevel getCurrentRole() { return currentRole.get(); }
 
-    public static Long getCurrentId() {
-        return threadLocal.get();
-    }
-
-    public static void removeCurrentId() {
-        threadLocal.remove();
-    }
-
+    public static void removeCurrentId() { currentId.remove(); }
+    public static void removeCurrentRole() { currentRole.remove(); }
 }

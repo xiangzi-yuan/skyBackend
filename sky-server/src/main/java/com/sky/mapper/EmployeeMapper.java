@@ -1,6 +1,10 @@
 package com.sky.mapper;
 
+import com.github.pagehelper.Page;
+import com.sky.dto.EmployeePageQueryDTO;
+import com.sky.dto.EmployeeUpdateDTO;
 import com.sky.entity.Employee;
+import com.sky.vo.EmployeePageVO;
 import org.apache.ibatis.annotations.*;
 
 import java.time.LocalDateTime;
@@ -41,4 +45,24 @@ public interface EmployeeMapper {
                                       @Param("updateTime") LocalDateTime updateTime,
                                       @Param("updateUser") Long updateUser);
 
+    /**
+     * 分页查询
+     * @param dto
+     * @return
+     */
+    Page<EmployeePageVO> pageQuery(EmployeePageQueryDTO dto);
+
+
+
+    /**
+     * 员工信息修改
+     * @param emp
+     */
+    void update(Employee emp);
+
+    /**
+     * 修改状态
+     * @param emp
+     */
+    void updateStatus(Employee emp);
 }

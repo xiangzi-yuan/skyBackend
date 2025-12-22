@@ -1,9 +1,8 @@
 package com.sky.service;
 
-import com.sky.dto.EmployeeCreateDTO;
-import com.sky.dto.EmployeeLoginDTO;
-import com.sky.dto.PasswordEditDTO;
+import com.sky.dto.*;
 import com.sky.entity.Employee;
+import com.sky.result.PageResult;
 
 public interface EmployeeService {
 
@@ -19,10 +18,32 @@ public interface EmployeeService {
      * @param employeeCreateDTO
      */
     void save(EmployeeCreateDTO employeeCreateDTO);
-
+    /**
+     * 修改员工接口
+     * @param dto
+     */
+    void changeEmployee(EmployeeUpdateDTO dto);
     /**
      * 修改密码接口方法
      * @param passwordEditDTO
      */
     void changePassword(PasswordEditDTO passwordEditDTO);
+
+    /**
+     * 查询员工
+     * @param employeePageQueryDTO
+     */
+    PageResult pageQuery(EmployeePageQueryDTO employeePageQueryDTO);
+
+    /**
+     * 根据id查询员工
+     * @param id
+     * @return
+     */
+    Employee getById(Long id);
+
+    void updateStatus(Long id, Integer status);
+
+
+
 }

@@ -44,4 +44,6 @@ public class Employee implements Serializable {
 
     private Integer pwdChanged;
 
+    private Integer role; // 1=STAFF, 5=MANAGER, 9=SUPER
+
 }

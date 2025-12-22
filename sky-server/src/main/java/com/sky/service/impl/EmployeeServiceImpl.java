@@ -1,26 +1,28 @@
 package com.sky.service.impl;
 
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.PasswordConstant;
 import com.sky.constant.PwdChangedConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.context.BaseContext;
-import com.sky.dto.EmployeeCreateDTO;
-import com.sky.dto.EmployeeLoginDTO;
-import com.sky.dto.PasswordEditDTO;
+import com.sky.dto.*;
 import com.sky.entity.Employee;
 import com.sky.exception.AccountLockedException;
 import com.sky.exception.AccountNotFoundException;
 import com.sky.exception.PasswordErrorException;
 import com.sky.mapper.EmployeeMapper;
+import com.sky.result.PageResult;
 import com.sky.service.EmployeeService;
+import com.sky.vo.EmployeePageVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.security.crypto.password.PasswordEncoder; // 哈希校验
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
@@ -72,13 +74,14 @@ public class EmployeeServiceImpl implements EmployeeService {
     /**
      * 新增员工
      * 逻辑改为初始默认密码加强制首次改密码
+     *
      * @param employeeCreateDTO
      */
     @Override
     public void save(EmployeeCreateDTO employeeCreateDTO) {
         // 对象属性拷贝
         Employee employee = new Employee();
-        BeanUtils.copyProperties(employeeCreateDTO,employee);
+        BeanUtils.copyProperties(employeeCreateDTO, employee);
         // 补全剩余属性
         // 状态
         employee.setStatus(StatusConstant.ENABLE);
@@ -99,7 +102,23 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public void changePassword(PasswordEditDTO passwordEditDTO){
+    public void changeEmployee(EmployeeUpdateDTO dto) {
+        Long currentId = BaseContext.getCurrentId();
+        Employee emp = Employee.builder()
+                .id(dto.getId())
+                .name(dto.getName())
+                .username(dto.getUsername())
+                .phone(dto.getPhone())
+                .sex(dto.getSex())
+                .idNumber(dto.getIdNumber())
+                .updateUser(currentId)
+                .build();
+
+        employeeMapper.update(emp);
+    }
+
+    @Override
+    public void changePassword(PasswordEditDTO passwordEditDTO) {
 
         // 防止越权：只能改当前登录用户的密码
         Long empId = BaseContext.getCurrentId();
@@ -120,5 +139,43 @@ public class EmployeeServiceImpl implements EmployeeService {
                 empId);
 
     }
+
+    @Override
+    public PageResult pageQuery(EmployeePageQueryDTO dto) {
+        // 开始分页查询
+        PageHelper.startPage(dto.getPage(), dto.getPageSize()); // 插件
+        Page<EmployeePageVO> page = employeeMapper.pageQuery(dto);
+
+        long total = page.getTotal();
+        List<EmployeePageVO> records = page.getResult();
+
+        return new PageResult(total, records);
+    }
+
+    /**
+     * 根据id查询员工
+     * @param id
+     * @return
+     */
+    @Override
+    public Employee getById(Long id) {
+        Employee employee = employeeMapper.getById(id);
+        employee.setPassword("****");
+        return employee;
+    }
+
+    @Override
+    public void updateStatus(Long id, Integer status) {
+        // 更新状态
+        Employee emp = Employee.builder()
+                .status(status)
+                .id(id)
+                .updateUser(BaseContext.getCurrentId())
+                .build();
+
+        employeeMapper.updateStatus(emp);
+    }
+
+
 
 }
