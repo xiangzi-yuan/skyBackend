@@ -2,45 +2,23 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<!--
-  这个 mapper 文件用于给 EmployeeMapper 接口提供 SQL 映射。
-  MyBatis 默认用 “Mapper接口全限定名 + '.' + 方法名” 去定位 SQL：
-  例如调用 employeeMapper.pageQuery(dto)，会去找 statementId = com.sky.mapper.EmployeeMapper.pageQuery
--->
 <mapper namespace="com.sky.mapper.EmployeeMapper">
 
-
-    <!--
-      id：SQL 语句的标识，通常与 Mapper 接口的方法名一致（这里对应 EmployeeMapper.pageQuery）
-      resultType：查询结果“每一行”映射成的 Java 类型（不是 List 的类型，而是 List 里元素的类型）
-      说明：select 返回多行时，MyBatis 会自动组装成 List<resultType>
-    -->
-    <select id="pageQuery" resultType="com.sky.vo.EmployeePageVO">
-
-        <!-- 基础查询：从 employee 表查询 -->
-        select id, name, username, phone, status,create_time, update_time from employee
-
-        <!--
-          where 动态拼接：
-          - <where> 会自动处理前导 AND/OR（把第一个 and/or 去掉）
-          - 并且在有条件时自动加上 WHERE；没有任何条件时不输出 WHERE
-        -->
+    <select id="pageQuery" resultType="com.sky.readmodel.employee.EmployeePageRM">
+        select
+        id,
+        name,
+        username,
+        phone,
+        status,
+        create_time as createTime,
+        update_time as updateTime
+        from employee
         <where>
-            <!--
-              test：OGNL 表达式，用于判断是否拼接该条件
-              这里表示：只有 name 非空且非空串时，才拼接 like 条件
-            -->
             <if test="name != null and name != ''">
-                <!--
-                  模糊匹配：name LIKE '%xxx%'
-                  用 concat('%', #{name}, '%') 拼接通配符，避免手写 '%${name}%' 造成 SQL 注入风险
-                  #{name}：预编译参数（PreparedStatement），安全
-                -->
                 and name like concat('%', #{name}, '%')
             </if>
         </where>
-
-        <!-- 排序：按 id 升序 -->
         order by id
     </select>
 
@@ -57,6 +35,7 @@
         </set>
         where id = #{id}
     </update>
+
     <update id="updateStatus" parameterType="com.sky.entity.Employee">
         update employee
         <set>

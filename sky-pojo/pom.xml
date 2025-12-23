@@ -2,30 +2,41 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <parent>
-        <artifactId>sky-take-out</artifactId>
         <groupId>com.sky</groupId>
+        <artifactId>sky-take-out</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
+
     <modelVersion>4.0.0</modelVersion>
     <artifactId>sky-pojo</artifactId>
+
     <dependencies>
+        <!-- Lombok：版本走父pom dependencyManagement -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.9.2</version>
-        </dependency>
+
+        <!-- 建议：不要在pojo模块显式引 jackson-databind，更不要 pin 2.9.2
+             如果确实需要 Jackson 注解/类型，通常只需要 jackson-annotations 或者干脆不依赖。
+             这里我保守一点：直接移除 jackson-databind，交给 sky-server（web模块）去带。
+        -->
+
+        <!-- knife4j：如果只是为了 VO/DTO 上的 swagger 注解，其实不需要把 starter 放到 pojo
+             但你现有项目在 pojo 里引用了它，我先不动，版本走父pom管理 -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-spring-boot-starter</artifactId>
         </dependency>
+
+        <!-- oss：版本走父pom -->
         <dependency>
             <groupId>com.aliyun.oss</groupId>
             <artifactId>aliyun-sdk-oss</artifactId>
         </dependency>
     </dependencies>
+
 </project>

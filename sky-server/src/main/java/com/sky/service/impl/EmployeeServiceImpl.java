@@ -2,29 +2,40 @@ package com.sky.service.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.sky.auth.model.EmployeeAuthInfo;
+import com.sky.constant.JwtClaimsConstant;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.PasswordConstant;
 import com.sky.constant.PwdChangedConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.context.BaseContext;
+import com.sky.converter.EmployeeReadConvert;
+import com.sky.converter.EmployeeWriteConvert;
 import com.sky.dto.*;
 import com.sky.entity.Employee;
 import com.sky.exception.AccountLockedException;
 import com.sky.exception.AccountNotFoundException;
 import com.sky.exception.PasswordErrorException;
 import com.sky.mapper.EmployeeMapper;
+import com.sky.properties.JwtProperties;
+import com.sky.readmodel.employee.EmployeeAuthInfo;
+import com.sky.readmodel.employee.EmployeeDetailRM;
+import com.sky.readmodel.employee.EmployeeLoginRM;
+import com.sky.readmodel.employee.EmployeePageRM;
 import com.sky.result.PageResult;
 import com.sky.service.EmployeeService;
+import com.sky.utils.JwtUtil;
 import com.sky.vo.EmployeeDetailVO;
+import com.sky.vo.EmployeeLoginVO;
 import com.sky.vo.EmployeePageVO;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
@@ -35,160 +46,159 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private JwtProperties jwtProperties;
+
+    @Autowired
+    private EmployeeReadConvert employeeReadConvert;
+
+    @Autowired
+    private EmployeeWriteConvert employeeWriteConvert;
 
     /**
-     * 员工登录
-     *
-     * @param employeeLoginDTO
-     * @return
+     * 登录：Service 直接返回 VO（Controller 变薄）
      */
     @Override
-    public Employee login(EmployeeLoginDTO employeeLoginDTO) {
+    public EmployeeLoginVO login(EmployeeLoginDTO employeeLoginDTO) {
         String username = employeeLoginDTO.getUsername();
         String password = employeeLoginDTO.getPassword();
 
-        //1、根据用户名查询数据库中的数据
-        Employee employee = employeeMapper.getByUsername(username);
-
-        //2、处理各种异常情况（用户名不存在、密码不对、账号被锁定）
-        if (employee == null) {
-            //账号不存在
+        EmployeeLoginRM rm = employeeMapper.getLoginInfoByUsername(username);
+        if (rm == null) {
             throw new AccountNotFoundException(MessageConstant.ACCOUNT_NOT_FOUND);
         }
 
-        //密码比对
-
-        // password：前端传来的明文
-        // employee.getPassword()：数据库里存的 bcrypt 哈希串（例如 $2b$12$...）
-        if (!passwordEncoder.matches(password, employee.getPassword())) {
+        if (!passwordEncoder.matches(password, rm.getPassword())) {
             throw new PasswordErrorException(MessageConstant.PASSWORD_ERROR);
         }
 
-        if (employee.getStatus() == StatusConstant.DISABLE) {
-            //账号被锁定
+        if (rm.getStatus() != null && rm.getStatus() == StatusConstant.DISABLE) {
             throw new AccountLockedException(MessageConstant.ACCOUNT_LOCKED);
         }
 
-        //3、返回实体对象
-        return employee;
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(JwtClaimsConstant.EMP_ID, rm.getId());
+        claims.put(JwtClaimsConstant.EMP_ROLE, rm.getRole());
+
+        String token = JwtUtil.createJWT(
+                jwtProperties.getAdminSecretKey(),
+                jwtProperties.getAdminTtl(),
+                claims
+        );
+
+        return EmployeeLoginVO.builder()
+                .id(rm.getId())
+                .userName(rm.getUsername())
+                .name(rm.getName())
+                .token(token)
+                .needChangePassword(rm.getPwdChanged() == null || rm.getPwdChanged() == 0)
+                .build();
     }
 
     /**
-     * 新增员工
-     * 逻辑改为初始默认密码加强制首次改密码
-     *
-     * @param employeeCreateDTO
+     * 新增员工：CreateDTO -> Entity 用 MapStruct
+     * 系统字段在 Service 统一填充（零信任）
      */
     @Override
-    public void save( EmployeeCreateDTO employeeCreateDTO) {
-        // 对象属性拷贝
-        Employee employee = new Employee();
-        BeanUtils.copyProperties(employeeCreateDTO, employee);
-        // 补全剩余属性
-        // 状态
-        employee.setStatus(StatusConstant.ENABLE);
-        // 设置密码
-        employee.setPassword(passwordEncoder.encode(PasswordConstant.DEFAULT_PASSWORD));
+    public void save(EmployeeCreateDTO employeeCreateDTO) {
+        Employee employee = employeeWriteConvert.fromCreateDTO(employeeCreateDTO);
 
+        // 系统字段（不要信任前端）
+        employee.setStatus(StatusConstant.ENABLE);
+        employee.setPassword(passwordEncoder.encode(PasswordConstant.DEFAULT_PASSWORD));
+        employee.setPwdChanged(PwdChangedConstant.NOT_CHANGED);
 
         employee.setCreateTime(LocalDateTime.now());
         employee.setUpdateTime(LocalDateTime.now());
 
-        Long id = BaseContext.getCurrentId();
-        employee.setCreateUser(id);
-        employee.setUpdateUser(id);
-        // 是否修改密码
-        employee.setPwdChanged(PwdChangedConstant.NOT_CHANGED);
+        Long currentId = BaseContext.getCurrentId();
+        employee.setCreateUser(currentId);
+        employee.setUpdateUser(currentId);
 
         employeeMapper.insert(employee);
     }
 
+    /**
+     * 修改员工：UpdateDTO -> Entity(局部更新) 用 MapStruct
+     */
     @Override
     public void changeEmployee(EmployeeUpdateDTO dto) {
         Long currentId = BaseContext.getCurrentId();
-        Employee emp = Employee.builder()
-                .id(dto.getId())
-                .name(dto.getName())
-                .username(dto.getUsername())
-                .phone(dto.getPhone())
-                .sex(dto.getSex())
-                .idNumber(dto.getIdNumber())
-                .updateUser(currentId)
-                .build();
+
+        // 只构造“承载更新”的实体：必须带 id
+        Employee emp = new Employee();
+        emp.setId(dto.getId());
+
+        // 合并非空字段（null 不覆盖）
+        employeeWriteConvert.mergeUpdate(dto, emp);
+
+        // 系统字段
+        emp.setUpdateUser(currentId);
 
         employeeMapper.update(emp);
     }
 
     @Override
     public void changePassword(PasswordEditDTO passwordEditDTO) {
-
-        // 只能改当前登录人
         Long empId = BaseContext.getCurrentId();
 
-        // 改：用鉴权信息查询（含 password/status/role/pwdChanged）
+        if (passwordEditDTO.getOldPassword() == null || passwordEditDTO.getNewPassword() == null) {
+            throw new IllegalArgumentException("oldPassword/newPassword is required");
+        }
+
         EmployeeAuthInfo auth = employeeMapper.getAuthInfoById(empId);
         if (auth == null) {
             throw new AccountNotFoundException(MessageConstant.ACCOUNT_NOT_FOUND);
         }
 
-        // 可选：账号禁用直接拒绝（按你项目常量）
         if (auth.getStatus() != null && auth.getStatus() == StatusConstant.DISABLE) {
             throw new AccountLockedException(MessageConstant.ACCOUNT_LOCKED);
         }
 
-        // 校验旧密码：raw=用户输入，encoded=数据库hash
         if (!passwordEncoder.matches(passwordEditDTO.getOldPassword(), auth.getPassword())) {
             throw new PasswordErrorException(MessageConstant.OLD_PASSWORD_ERROR);
         }
 
-        // 可选：新旧不能相同
-        if (passwordEditDTO.getNewPassword() != null
-                && passwordEditDTO.getNewPassword().equals(passwordEditDTO.getOldPassword())) {
+        if (passwordEditDTO.getNewPassword().equals(passwordEditDTO.getOldPassword())) {
             throw new IllegalArgumentException("新密码不能与旧密码相同");
         }
 
-        // 入库必须是 hash
         String newHash = passwordEncoder.encode(passwordEditDTO.getNewPassword());
-
-        // 改：更新用 empId，别用 employee.getId()
         employeeMapper.updatePasswordAndMarkChanged(empId, newHash, LocalDateTime.now(), empId);
     }
 
-
+    /**
+     * 分页查询：Mapper -> RM；Service 用 MapStruct 转 VO
+     */
     @Override
     public PageResult pageQuery(EmployeePageQueryDTO dto) {
-        // 开始分页查询
-        PageHelper.startPage(dto.getPage(), dto.getPageSize()); // 插件
-        Page<EmployeePageVO> page = employeeMapper.pageQuery(dto);
+        PageHelper.startPage(dto.getPage(), dto.getPageSize());
+        Page<EmployeePageRM> page = employeeMapper.pageQuery(dto);
 
         long total = page.getTotal();
-        List<EmployeePageVO> records = page.getResult();
+        List<EmployeePageVO> records = page.getResult()
+                .stream()
+                .map(employeeReadConvert::toPageVO)
+                .collect(Collectors.toList());
 
         return new PageResult(total, records);
     }
 
     /**
-     * 根据id查询员工
-     * @param id
-     * @return
+     * 根据id查询：Mapper -> RM；Service 用 MapStruct 转 VO
      */
     @Override
     public EmployeeDetailVO getById(Long id) {
-        return employeeMapper.getDetailById(id);
+        EmployeeDetailRM rm = employeeMapper.getDetailById(id);
+        return employeeReadConvert.toDetailVO(rm);
     }
 
     @Override
     public void updateStatus(Long id, Integer status) {
-        // 更新状态
-        Employee emp = Employee.builder()
-                .status(status)
-                .id(id)
-                .updateUser(BaseContext.getCurrentId())
-                .build();
-
+        Employee emp = new Employee();
+        emp.setId(id);
+        emp.setStatus(status);
+        emp.setUpdateUser(BaseContext.getCurrentId());
         employeeMapper.updateStatus(emp);
     }
-
-
-
 }
