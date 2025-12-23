@@ -1126,12 +1126,12 @@ xml:
 - 报错核心信息：
     - `Could not resolve type alias 'com.sky.entity.EmployeePageVO'`
     - `ClassNotFoundException: com.sky.entity.EmployeePageVO`
-- 根因：XML 里把 VO 包名写错了（误写到 `com.sky.entity`），实际在 `com.sky.vo.EmployeePageVO`。
+- 根因：XML 里把 VO 包名写错了（误写到 `com.sky.entity`），实际在 `com.sky.vo.EmployeeVO`。
 
 #### 最终修复：resultType 指向正确类 + SQL 明确列并加别名
 
 - XML 修正：
-    - `resultType="com.sky.vo.EmployeePageVO"`
+    - `resultType="com.sky.vo.EmployeeVO"`
 - SQL 进一步规范：
     - 明确列选择，彻底去掉 `select *`
     - `create_time as createTime`

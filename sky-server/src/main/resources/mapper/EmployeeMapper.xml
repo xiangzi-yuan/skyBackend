@@ -57,7 +57,7 @@
         </set>
         where id = #{id}
     </update>
-    <update id="updateStatus" parameterType="Employee">
+    <update id="updateStatus" parameterType="com.sky.entity.Employee">
         update employee
         <set>
             <if test="status != null">status = #{status},</if>

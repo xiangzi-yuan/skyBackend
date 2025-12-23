@@ -6,12 +6,13 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
-public class EmployeePageVO implements Serializable {
+public class EmployeeDetailVO implements Serializable {
     private Long id;
     private String username;
     private String name;
     private String phone;
-    private Integer status;
+    private String sex;
+    private String idNumber;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

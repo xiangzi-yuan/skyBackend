@@ -1,8 +1,10 @@
 package com.sky.interceptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sky.auth.model.EmployeeAuthInfo;
 import com.sky.constant.JwtClaimsConstant;
 import com.sky.constant.MessageConstant;
+import com.sky.constant.StatusConstant;
 import com.sky.context.BaseContext;
 import com.sky.mapper.EmployeeMapper;
 import com.sky.properties.JwtProperties;
@@ -69,9 +71,22 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
                 return true;
             }
 
-            // 4) 强制改密：未改密 -> 403（白名单除外）
-            Integer pwdChanged = employeeMapper.getPwdChangedById(empId);
-            if (pwdChanged == null || pwdChanged == 0) {
+            // 4) 基于数据库最新状态做鉴权信息校验：禁用 / 是否改密
+            //    目的：解决“禁用账号仍能带旧 token 访问”的问题
+            EmployeeAuthInfo auth = employeeMapper.getAuthInfoById(empId);
+            if (auth == null) {
+                response.setStatus(401);
+                return false;
+            }
+
+            // 4.1) 禁用账号：直接拒绝
+            if (auth.getStatus() != null && auth.getStatus() == StatusConstant.DISABLE) {
+                writeJson403(response, MessageConstant.ACCOUNT_LOCKED);
+                return false;
+            }
+
+            // 4.2) 强制改密：未改密 -> 403（白名单除外）
+            if (auth.getPwdChanged() == null || auth.getPwdChanged() == 0) {
                 writeJson403(response, MessageConstant.PASSWORD_NEED_CHANGE);
                 return false;
             }
@@ -109,13 +124,19 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // MANAGER：除员工管理外都放行（员工管理一律拒绝）
+        // MANAGER：允许员工管理“只读”(GET)，禁止写
         if (role == RoleLevel.MANAGER) {
-            // 员工管理接口全拒绝（login/logout/editPassword 已在白名单提前 return）
-            return !uri.startsWith("/admin/employee");
+
+            // 员工管理模块：只允许 GET（分页、按id查询），其余拒绝
+            if (uri.startsWith("/admin/employee")) {
+                return "GET".equalsIgnoreCase(method);
+            }
+
+            // 其它模块先全放行（你后面再细分）
+            return true;
         }
 
-        // STAFF：只允许自用 + 低风险只读（你说的数据范围控制暂不做）
+        // STAFF：只允许自用 + 低风险只读
         if (role == RoleLevel.STAFF) {
             // 分类下拉
             if ("/admin/category/list".equals(uri) && "GET".equalsIgnoreCase(method)) return true;

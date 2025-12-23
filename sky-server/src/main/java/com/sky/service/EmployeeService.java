@@ -3,6 +3,7 @@ package com.sky.service;
 import com.sky.dto.*;
 import com.sky.entity.Employee;
 import com.sky.result.PageResult;
+import com.sky.vo.EmployeeDetailVO;
 
 public interface EmployeeService {
 
@@ -40,7 +41,7 @@ public interface EmployeeService {
      * @param id
      * @return
      */
-    Employee getById(Long id);
+    EmployeeDetailVO getById(Long id);
 
     void updateStatus(Long id, Integer status);
 

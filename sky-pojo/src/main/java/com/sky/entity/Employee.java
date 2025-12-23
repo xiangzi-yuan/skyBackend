@@ -22,7 +22,7 @@ public class Employee implements Serializable {
 
     private String name;
 
-    private String password;
+    private String password; // key
 
     private String phone;
 
@@ -42,8 +42,8 @@ public class Employee implements Serializable {
 
     private Long updateUser;
 
-    private Integer pwdChanged;
+    private Integer pwdChanged; // key
 
-    private Integer role; // 1=STAFF, 5=MANAGER, 9=SUPER
+    private Integer role; // key 1=STAFF, 5=MANAGER, 9=SUPER
 
 }

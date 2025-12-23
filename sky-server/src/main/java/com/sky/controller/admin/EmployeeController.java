@@ -9,10 +9,12 @@ import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.EmployeeService;
 import com.sky.utils.JwtUtil;
+import com.sky.vo.EmployeeDetailVO;
 import com.sky.vo.EmployeeLoginVO;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -85,7 +87,7 @@ public class EmployeeController {
      */
     @PostMapping
     @ApiOperation("新增员工")
-    public Result<String> saveEmployee(@RequestBody EmployeeCreateDTO employeeCreateDTO){
+    public Result<String> saveEmployee(@Validated @RequestBody EmployeeCreateDTO employeeCreateDTO){
         log.info("新增员工：username={}", employeeCreateDTO.getUsername());
         employeeService.save(employeeCreateDTO);
         return Result.success();
@@ -123,10 +125,10 @@ public class EmployeeController {
      */
     @GetMapping("/{id}")
     @ApiOperation("根据id查询员工信息")
-    public Result<Employee> getById(@PathVariable Long id){
+    public Result<EmployeeDetailVO> getById(@PathVariable Long id){
         log.info("根据id查询员工信息：{}", id);
-        Employee employee = employeeService.getById(id);
-        return Result.success(employee);
+        EmployeeDetailVO vo = employeeService.getById(id);
+        return Result.success(vo);
     }
 
     /**
@@ -161,5 +163,7 @@ public class EmployeeController {
         employeeService.updateStatus(id, status);
         return Result.success();
     }
+
+
 
 }

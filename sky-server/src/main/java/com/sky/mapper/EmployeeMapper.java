@@ -1,9 +1,10 @@
 package com.sky.mapper;
 
 import com.github.pagehelper.Page;
+import com.sky.auth.model.EmployeeAuthInfo;
 import com.sky.dto.EmployeePageQueryDTO;
-import com.sky.dto.EmployeeUpdateDTO;
 import com.sky.entity.Employee;
+import com.sky.vo.EmployeeDetailVO;
 import com.sky.vo.EmployeePageVO;
 import org.apache.ibatis.annotations.*;
 
@@ -14,16 +15,24 @@ public interface EmployeeMapper {
 
     /**
      * 根据用户名查询员工
+     *
      * @param username
      * @return
      */
     @Select("select * from employee where username = #{username}")
     Employee getByUsername(String username);
 
-    @Select("select * from employee where id = #{id}")
-    Employee getById(Long id);
+    /**
+     * 根据id查询员工
+     *
+     * @param id
+     * @return
+     */
+    @Select("select id, name, username, phone, sex, id_number, status, create_time, update_time from employee where id = #{id}")
+    EmployeeDetailVO getDetailById(Long id);
     /**
      * 新增员工
+     *
      * @param employee
      * @return
      */
@@ -33,8 +42,8 @@ public interface EmployeeMapper {
             "(#{name}, #{username}, #{password}, #{phone}, #{sex}, #{idNumber}, #{status}, #{pwdChanged}, #{createTime}, #{updateTime}, #{createUser}, #{updateUser})")
     void insert(Employee employee);
 
-    @Select("select pwd_changed from employee where id = #{id}")
-    Integer getPwdChangedById(@Param("id") Long id);
+    @Select("select id, password, status, role, pwd_changed from employee where id = #{id}")
+    EmployeeAuthInfo getAuthInfoById(Long id);
 
     // sky-server: com.sky.mapper.EmployeeMapper
     @Update("update employee " +
@@ -47,22 +56,27 @@ public interface EmployeeMapper {
 
     /**
      * 分页查询
+     *
      * @param dto
      * @return
      */
     Page<EmployeePageVO> pageQuery(EmployeePageQueryDTO dto);
 
 
-
     /**
      * 员工信息修改
+     *
      * @param emp
      */
     void update(Employee emp);
 
     /**
      * 修改状态
+     *
      * @param emp
      */
     void updateStatus(Employee emp);
+
+
+
 }

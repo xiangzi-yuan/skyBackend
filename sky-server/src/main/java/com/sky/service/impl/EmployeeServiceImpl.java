@@ -2,6 +2,7 @@ package com.sky.service.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.sky.auth.model.EmployeeAuthInfo;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.PasswordConstant;
 import com.sky.constant.PwdChangedConstant;
@@ -15,6 +16,7 @@ import com.sky.exception.PasswordErrorException;
 import com.sky.mapper.EmployeeMapper;
 import com.sky.result.PageResult;
 import com.sky.service.EmployeeService;
+import com.sky.vo.EmployeeDetailVO;
 import com.sky.vo.EmployeePageVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,7 +80,7 @@ public class EmployeeServiceImpl implements EmployeeService {
      * @param employeeCreateDTO
      */
     @Override
-    public void save(EmployeeCreateDTO employeeCreateDTO) {
+    public void save( EmployeeCreateDTO employeeCreateDTO) {
         // 对象属性拷贝
         Employee employee = new Employee();
         BeanUtils.copyProperties(employeeCreateDTO, employee);
@@ -96,7 +98,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setCreateUser(id);
         employee.setUpdateUser(id);
         // 是否修改密码
-        employee.setPwdChanged(PwdChangedConstant.PWD);
+        employee.setPwdChanged(PwdChangedConstant.NOT_CHANGED);
 
         employeeMapper.insert(employee);
     }
@@ -120,25 +122,38 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public void changePassword(PasswordEditDTO passwordEditDTO) {
 
-        // 防止越权：只能改当前登录用户的密码
+        // 只能改当前登录人
         Long empId = BaseContext.getCurrentId();
-        Employee employee = employeeMapper.getById(empId);
 
-        if (employee == null) {
+        // 改：用鉴权信息查询（含 password/status/role/pwdChanged）
+        EmployeeAuthInfo auth = employeeMapper.getAuthInfoById(empId);
+        if (auth == null) {
             throw new AccountNotFoundException(MessageConstant.ACCOUNT_NOT_FOUND);
         }
-        // 校验原密码
-        if (!passwordEncoder.matches(passwordEditDTO.getOldPassword(), employee.getPassword())) {
+
+        // 可选：账号禁用直接拒绝（按你项目常量）
+        if (auth.getStatus() != null && auth.getStatus() == StatusConstant.DISABLE) {
+            throw new AccountLockedException(MessageConstant.ACCOUNT_LOCKED);
+        }
+
+        // 校验旧密码：raw=用户输入，encoded=数据库hash
+        if (!passwordEncoder.matches(passwordEditDTO.getOldPassword(), auth.getPassword())) {
             throw new PasswordErrorException(MessageConstant.OLD_PASSWORD_ERROR);
         }
-        // mapper设置新密码
-        String newHash = passwordEncoder.encode(passwordEditDTO.getNewPassword());
-        employeeMapper.updatePasswordAndMarkChanged(employee.getId(),
-                newHash,
-                LocalDateTime.now(),
-                empId);
 
+        // 可选：新旧不能相同
+        if (passwordEditDTO.getNewPassword() != null
+                && passwordEditDTO.getNewPassword().equals(passwordEditDTO.getOldPassword())) {
+            throw new IllegalArgumentException("新密码不能与旧密码相同");
+        }
+
+        // 入库必须是 hash
+        String newHash = passwordEncoder.encode(passwordEditDTO.getNewPassword());
+
+        // 改：更新用 empId，别用 employee.getId()
+        employeeMapper.updatePasswordAndMarkChanged(empId, newHash, LocalDateTime.now(), empId);
     }
+
 
     @Override
     public PageResult pageQuery(EmployeePageQueryDTO dto) {
@@ -158,10 +173,8 @@ public class EmployeeServiceImpl implements EmployeeService {
      * @return
      */
     @Override
-    public Employee getById(Long id) {
-        Employee employee = employeeMapper.getById(id);
-        employee.setPassword("****");
-        return employee;
+    public EmployeeDetailVO getById(Long id) {
+        return employeeMapper.getDetailById(id);
     }
 
     @Override
