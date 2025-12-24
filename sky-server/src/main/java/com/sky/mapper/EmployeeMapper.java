@@ -9,9 +9,10 @@ import com.sky.readmodel.employee.EmployeeAuthInfo;
 import com.sky.readmodel.employee.EmployeeDetailRM;
 import com.sky.readmodel.employee.EmployeeLoginRM;
 import com.sky.readmodel.employee.EmployeePageRM;
-import org.apache.ibatis.annotations.*;
-
-import java.time.LocalDateTime;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface EmployeeMapper {

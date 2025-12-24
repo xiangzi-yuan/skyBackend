@@ -1,13 +1,13 @@
 package com.sky.interceptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sky.readmodel.employee.EmployeeAuthInfo;
 import com.sky.constant.JwtClaimsConstant;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.context.BaseContext;
 import com.sky.mapper.EmployeeMapper;
 import com.sky.properties.JwtProperties;
+import com.sky.readmodel.employee.EmployeeAuthInfo;
 import com.sky.result.Result;
 import com.sky.role.RoleLevel;
 import com.sky.utils.JwtUtil;

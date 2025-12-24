@@ -2,11 +2,7 @@ package com.sky.service.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.sky.constant.JwtClaimsConstant;
-import com.sky.constant.MessageConstant;
-import com.sky.constant.PasswordConstant;
-import com.sky.constant.PwdChangedConstant;
-import com.sky.constant.StatusConstant;
+import com.sky.constant.*;
 import com.sky.context.BaseContext;
 import com.sky.converter.EmployeeReadConvert;
 import com.sky.converter.EmployeeWriteConvert;
@@ -108,12 +104,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setPassword(passwordEncoder.encode(PasswordConstant.DEFAULT_PASSWORD));
         employee.setPwdChanged(PwdChangedConstant.NOT_CHANGED);
 
-        employee.setCreateTime(LocalDateTime.now());
-        employee.setUpdateTime(LocalDateTime.now());
-
-        Long currentId = BaseContext.getCurrentId();
-        employee.setCreateUser(currentId);
-        employee.setUpdateUser(currentId);
 
         employeeMapper.insert(employee);
     }
