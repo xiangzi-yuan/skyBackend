@@ -142,29 +142,39 @@ public class EmployeeServiceImpl implements EmployeeService {
     public void changePassword(PasswordEditDTO passwordEditDTO) {
         Long empId = BaseContext.getCurrentId();
 
+        // 校验密码规范
         if (passwordEditDTO.getOldPassword() == null || passwordEditDTO.getNewPassword() == null) {
             throw new IllegalArgumentException("oldPassword/newPassword is required");
         }
 
+        // 校验权限
         EmployeeAuthInfo auth = employeeMapper.getAuthInfoById(empId);
         if (auth == null) {
             throw new AccountNotFoundException(MessageConstant.ACCOUNT_NOT_FOUND);
         }
 
+        // 校验状态
         if (auth.getStatus() != null && auth.getStatus() == StatusConstant.DISABLE) {
             throw new AccountLockedException(MessageConstant.ACCOUNT_LOCKED);
         }
 
+        // 校验旧密码
         if (!passwordEncoder.matches(passwordEditDTO.getOldPassword(), auth.getPassword())) {
             throw new PasswordErrorException(MessageConstant.OLD_PASSWORD_ERROR);
         }
 
+        // 校验新密码
         if (passwordEditDTO.getNewPassword().equals(passwordEditDTO.getOldPassword())) {
             throw new IllegalArgumentException("新密码不能与旧密码相同");
         }
 
         String newHash = passwordEncoder.encode(passwordEditDTO.getNewPassword());
-        employeeMapper.updatePasswordAndMarkChanged(empId, newHash, LocalDateTime.now(), empId);
+        Employee e = new Employee();
+        e.setId(empId);
+        e.setPassword(newHash);
+        e.setPwdChanged(PwdChangedConstant.CHANGED); // 比如 1
+        employeeMapper.updatePasswordAndMarkChanged(e);
+
     }
 
     /**

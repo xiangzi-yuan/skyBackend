@@ -30,8 +30,10 @@
             <if test="phone != null and phone != ''">phone = #{phone},</if>
             <if test="sex != null and sex != ''">sex = #{sex},</if>
             <if test="idNumber != null and idNumber != ''">id_number = #{idNumber},</if>
+
+            <!-- 审计字段：由 AOP 填值，SQL 负责写回 -->
             <if test="updateUser != null">update_user = #{updateUser},</if>
-            update_time = now()
+            <if test="updateTime != null">update_time = #{updateTime},</if>
         </set>
         where id = #{id}
     </update>
@@ -40,10 +42,13 @@
         update employee
         <set>
             <if test="status != null">status = #{status},</if>
+
+            <!-- 审计字段：由 AOP 填值，SQL 负责写回 -->
             <if test="updateUser != null">update_user = #{updateUser},</if>
-            update_time = now()
+            <if test="updateTime != null">update_time = #{updateTime},</if>
         </set>
         where id = #{id}
     </update>
+
 
 </mapper>
