@@ -50,7 +50,7 @@ public class EmployeeController {
     }
 
     @GetMapping("/page")
-    @ApiOperation("查询员工信息")
+    @ApiOperation("分页查询员工信息")
     public Result<PageResult> page(EmployeePageQueryDTO dto) {
         return Result.success(employeeService.pageQuery(dto));
     }

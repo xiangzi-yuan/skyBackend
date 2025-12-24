@@ -1,9 +1,12 @@
 package com.sky.mapper;
 
+import com.github.pagehelper.Page;
 import com.sky.annotation.AutoFill;
+import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
-import com.sky.entity.Employee;
 import com.sky.enumeration.OperationType;
+import com.sky.readmodel.dish.DishDetailRM;
+import com.sky.readmodel.dish.DishPageRM;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
@@ -30,4 +33,31 @@ public interface DishMapper {
     """)
     void insert(Dish dish);
 
+    /**
+     * 分页查询
+     * @param dto
+     * @return
+     */
+    Page<DishPageRM> pageQuery(DishPageQueryDTO dto);
+    
+    /**
+     * 根据ID查询菜品详情（含分类名称）
+     * @param id 菜品ID
+     * @return 菜品详情 ReadModel（不含口味，口味单独查询）
+     */
+    @Select("""
+        select d.id,
+               d.name,
+               d.category_id,
+               c.name as category_name,
+               d.price,
+               d.image,
+               d.description,
+               d.status,
+               d.update_time
+        from dish d
+        left join category c on d.category_id = c.id
+        where d.id = #{id}
+    """)
+    DishDetailRM getDetailById(Long id);
 }

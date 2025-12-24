@@ -1,4 +1,4 @@
-package com.sky.entity;
+package com.sky.vo;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,34 +8,29 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * 菜品
+ * 菜品详情 VO - 返回给前端的菜品完整信息
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Dish implements Serializable {
-
+public class DishDetailVO implements Serializable {
+    
     private static final long serialVersionUID = 1L;
-
+    
     private Long id;
-    //菜品名称
     private String name;
-    //菜品分类id
     private Long categoryId;
-    //菜品价格
+    private String categoryName;
     private BigDecimal price;
-    //图片
     private String image;
-    //描述信息
     private String description;
-    //0 停售 1 起售
     private Integer status;
-    private LocalDateTime createTime;
     private LocalDateTime updateTime;
-    private Long createUser;
-    private Long updateUser;
-    // Entity 不包含关联集合，通过查询时单独处理
+    
+    // 口味列表
+    private List<DishFlavorVO> flavors;
 }
