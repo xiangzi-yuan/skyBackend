@@ -31,5 +31,39 @@
         order by d.create_time desc
     </select>
 
+    <delete id="delete" >
+        delete from dish where id in 
+        <foreach collection="ids" item="id" open = "(" separator="," close=")">
+                                    #{id}
+        </foreach>
+    </delete>
+
+    <update id="updateStatus" parameterType="com.sky.entity.Dish">
+        update dish
+        <set>
+            <if test="status != null">status = #{status},</if>
+
+            <!-- 审计字段：由 AOP 填值，SQL 负责写回 -->
+            <if test="updateUser != null">update_user = #{updateUser},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <update id="update" parameterType="com.sky.entity.Dish">
+        update dish
+        <set>
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="image != null and image != ''">image = #{image},</if>
+            <if test="description != null and description != ''">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+
+            <if test="updateUser != null">update_user = #{updateUser},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        where id = #{id}
+    </update>
 
 </mapper>

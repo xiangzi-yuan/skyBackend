@@ -87,7 +87,6 @@ public class CategoryServiceImpl implements CategoryService {
             //当前分类下有菜品，不能删除
             throw new DeletionNotAllowedException(MessageConstant.CATEGORY_BE_RELATED_BY_SETMEAL);
         }
-
         //删除分类数据
         categoryMapper.deleteById(id);
     }

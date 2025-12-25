@@ -27,7 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,8 +121,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         // 合并非空字段（null 不覆盖）
         employeeWriteConvert.mergeUpdate(dto, emp);
 
-        // 系统字段
-        emp.setUpdateUser(currentId);
 
         employeeMapper.update(emp);
     }
@@ -198,7 +195,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee emp = new Employee();
         emp.setId(id);
         emp.setStatus(status);
-        emp.setUpdateUser(BaseContext.getCurrentId());
         employeeMapper.updateStatus(emp);
     }
 }

@@ -1,8 +1,18 @@
 package com.sky.converter;
 
 import com.sky.dto.DishDTO;
+import com.sky.dto.DishFlavorDTO;
+import com.sky.dto.DishUpdateDTO;
 import com.sky.entity.Dish;
+import com.sky.entity.DishFlavor;
 import org.mapstruct.*;
+
+import java.util.List;
+
+/**
+ * 菜品写转换器 - 负责菜品聚合根的写操作转换
+ * 包含：Dish 和 DishFlavor 的 DTO -> Entity 转换
+ */
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface DishWriteConvert {
@@ -23,7 +33,7 @@ public interface DishWriteConvert {
             @Mapping(target = "createUser", ignore = true),
             @Mapping(target = "updateUser", ignore = true)
     })
-    Dish fromCreateDTO(DishDTO dto); // 把 DTO 转成一个新的 Dish 实体
+    Dish fromCreateDTO(DishDTO dto);
 
     /**
      * 修改菜品：DTO -> Entity（局部更新）
@@ -41,5 +51,38 @@ public interface DishWriteConvert {
             @Mapping(target = "createUser", ignore = true),
             @Mapping(target = "updateUser", ignore = true)
     })
-    void mergeUpdate(DishDTO dto, @MappingTarget Dish dish); // 把 dto 的非 null 字段拷贝到“已有的 dish 对象”上。
+    void mergeUpdate(DishDTO dto, @MappingTarget Dish dish);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mappings({
+            @Mapping(target = "id", ignore = true),
+
+            @Mapping(target = "status", ignore = true),
+
+            @Mapping(target = "createTime", ignore = true),
+            @Mapping(target = "updateTime", ignore = true),
+            @Mapping(target = "createUser", ignore = true),
+            @Mapping(target = "updateUser", ignore = true)
+    })
+    void mergeUpdate(DishUpdateDTO dto, @MappingTarget Dish dish);
+    // ==================== DishFlavor 转换 ====================
+
+    /**
+     * 口味 DTO -> Entity
+     * id 和 dishId 由 Service 层填充
+     */
+    @Mappings({
+            @Mapping(target = "id", ignore = true),
+            @Mapping(target = "dishId", ignore = true)
+    })
+    DishFlavor fromFlavorDTO(DishFlavorDTO dto);
+
+    /**
+     * 批量转换口味列表
+     */
+    @Mappings({
+            @Mapping(target = "id", ignore = true),
+            @Mapping(target = "dishId", ignore = true)
+    })
+    List<DishFlavor> fromFlavorDTOList(List<DishFlavorDTO> dtoList);
 }

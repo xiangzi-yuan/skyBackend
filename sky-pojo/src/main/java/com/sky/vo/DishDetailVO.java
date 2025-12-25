@@ -31,6 +31,6 @@ public class DishDetailVO implements Serializable {
     private Integer status;
     private LocalDateTime updateTime;
     
-    // 口味列表
+    // 返回包含口味信息
     private List<DishFlavorVO> flavors;
 }
