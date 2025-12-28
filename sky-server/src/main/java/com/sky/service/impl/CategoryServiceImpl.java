@@ -5,17 +5,23 @@ import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.context.BaseContext;
-import com.sky.dto.CategoryDTO;
-import com.sky.dto.CategoryPageQueryDTO;
+import com.sky.converter.CategoryReadConvert;
+import com.sky.converter.CategoryWriteConvert;
+import com.sky.dto.category.CategoryCreateDTO;
+import com.sky.dto.category.CategoryPageQueryDTO;
+import com.sky.dto.category.CategoryUpdateDTO;
 import com.sky.entity.Category;
 import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.CategoryMapper;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealMapper;
+import com.sky.readmodel.category.CategoryDetailRM;
+import com.sky.readmodel.category.CategoryPageRM;
 import com.sky.result.PageResult;
 import com.sky.service.CategoryService;
+import com.sky.vo.category.CategoryDetailVO;
+import com.sky.vo.category.CategorySimpleVO;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +29,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 分类业务层
+ * 分类业务层实现
  */
 @Service
 @Slf4j
@@ -35,20 +41,22 @@ public class CategoryServiceImpl implements CategoryService {
     private DishMapper dishMapper;
     @Autowired
     private SetmealMapper setmealMapper;
+    @Autowired
+    private CategoryWriteConvert categoryWriteConvert;
+    @Autowired
+    private CategoryReadConvert categoryReadConvert;
 
     /**
      * 新增分类
-     * @param categoryDTO
+     * @param dto 新增分类DTO
      */
-    public void save(CategoryDTO categoryDTO) {
-        Category category = new Category();
-        //属性拷贝
-        BeanUtils.copyProperties(categoryDTO, category);
+    @Override
+    public void save(CategoryCreateDTO dto) {
+        // DTO -> Entity
+        Category category = categoryWriteConvert.fromCreateDTO(dto);
 
-        //分类状态默认为禁用状态0
-        category.setStatus(StatusConstant.DISABLE);
-
-        //设置创建时间、修改时间、创建人、修改人
+        // 填充系统字段
+        category.setStatus(StatusConstant.DISABLE); // 新建默认禁用
         category.setCreateTime(LocalDateTime.now());
         category.setUpdateTime(LocalDateTime.now());
         category.setCreateUser(BaseContext.getCurrentId());
@@ -59,47 +67,65 @@ public class CategoryServiceImpl implements CategoryService {
 
     /**
      * 分页查询
-     * @param categoryPageQueryDTO
-     * @return
+     * @param dto 分页查询条件
+     * @return 分页结果
      */
-    public PageResult pageQuery(CategoryPageQueryDTO categoryPageQueryDTO) {
-        PageHelper.startPage(categoryPageQueryDTO.getPage(),categoryPageQueryDTO.getPageSize());
-        //下一条sql进行分页，自动加入limit关键字分页
-        Page<Category> page = categoryMapper.pageQuery(categoryPageQueryDTO);
-        return new PageResult(page.getTotal(), page.getResult());
+    @Override
+    public PageResult pageQuery(CategoryPageQueryDTO dto) {
+        PageHelper.startPage(dto.getPage(), dto.getPageSize());
+        Page<CategoryPageRM> page = categoryMapper.pageQuery(dto);
+        return new PageResult(page.getTotal(), categoryReadConvert.toPageVOList(page.getResult()));
     }
 
     /**
-     * 根据id删除分类
-     * @param id
+     * 根据ID查询详情（用于编辑回显）
+     * @param id 分类ID
+     * @return 分类详情VO
      */
+    @Override
+    public CategoryDetailVO getById(Long id) {
+        CategoryDetailRM detailRM = categoryMapper.getById(id);
+        return categoryReadConvert.toDetailVO(detailRM);
+    }
+
+    /**
+     * 根据ID删除分类（软删除）
+     * @param id 分类ID
+     */
+    @Override
     public void deleteById(Long id) {
-        //查询当前分类是否关联了菜品，如果关联了就抛出业务异常
+        // 查询当前分类是否关联了菜品
         Integer count = dishMapper.countByCategoryId(id);
-        if(count > 0){
-            //当前分类下有菜品，不能删除
+        if (count > 0) {
             throw new DeletionNotAllowedException(MessageConstant.CATEGORY_BE_RELATED_BY_DISH);
         }
 
-        //查询当前分类是否关联了套餐，如果关联了就抛出业务异常
+        // 查询当前分类是否关联了套餐
         count = setmealMapper.countByCategoryId(id);
-        if(count > 0){
-            //当前分类下有菜品，不能删除
+        if (count > 0) {
             throw new DeletionNotAllowedException(MessageConstant.CATEGORY_BE_RELATED_BY_SETMEAL);
         }
-        //删除分类数据
-        categoryMapper.deleteById(id);
+
+        // 软删除分类
+        categoryMapper.softDeleteById(id, LocalDateTime.now());
     }
 
     /**
      * 修改分类
-     * @param categoryDTO
+     * @param dto 修改分类DTO
      */
-    public void update(CategoryDTO categoryDTO) {
-        Category category = new Category();
-        BeanUtils.copyProperties(categoryDTO,category);
+    @Override
+    public void update(CategoryUpdateDTO dto) {
+        // 先查询原实体
+        Category category = categoryMapper.getEntityById(dto.getId());
+        if (category == null) {
+            throw new RuntimeException("分类不存在");
+        }
 
-        //设置修改时间、修改人
+        // DTO 合并到 Entity（只更新允许修改的字段）
+        categoryWriteConvert.mergeUpdate(dto, category);
+
+        // 填充系统字段
         category.setUpdateTime(LocalDateTime.now());
         category.setUpdateUser(BaseContext.getCurrentId());
 
@@ -107,10 +133,11 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     /**
-     * 启用、禁用分类
-     * @param status
-     * @param id
+     * 启用/禁用分类
+     * @param status 状态值
+     * @param id 分类ID
      */
+    @Override
     public void startOrStop(Integer status, Long id) {
         Category category = Category.builder()
                 .id(id)
@@ -122,11 +149,13 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     /**
-     * 根据类型查询分类
-     * @param type
-     * @return
+     * 根据类型查询分类列表（用于下拉选择）
+     * @param type 分类类型
+     * @return 分类简略信息列表
      */
-    public List<Category> list(Integer type) {
-        return categoryMapper.list(type);
+    @Override
+    public List<CategorySimpleVO> list(Integer type) {
+        List<Category> categories = categoryMapper.list(type);
+        return categoryReadConvert.toSimpleVOList(categories);
     }
 }

@@ -6,9 +6,9 @@ import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.converter.DishReadConvert;
 import com.sky.converter.DishWriteConvert;
-import com.sky.dto.DishCreateDTO;
-import com.sky.dto.DishPageQueryDTO;
-import com.sky.dto.DishUpdateDTO;
+import com.sky.dto.dish.DishCreateDTO;
+import com.sky.dto.dish.DishPageQueryDTO;
+import com.sky.dto.dish.DishUpdateDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
 import com.sky.exception.DeletionNotAllowedException;
@@ -19,14 +19,17 @@ import com.sky.readmodel.dish.DishDetailRM;
 import com.sky.readmodel.dish.DishPageRM;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
-import com.sky.vo.DishDetailVO;
-import com.sky.vo.DishFlavorVO;
-import com.sky.vo.DishPageVO;
+import com.sky.vo.dish.DishDetailVO;
+import com.sky.vo.dish.DishFlavorVO;
+import com.sky.vo.dish.DishPageVO;
+import com.sky.vo.dish.DishSetmealRelationVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -121,13 +124,13 @@ public class DishServiceImpl implements DishService {
     }
 
     /**
-     * 删除菜品（支持批量）
+     * 删除菜品（支持批量）- 软删除
      *
      * <p>业务规则：
      * <ul>
      *   <li>起售中的菜品不能删除</li>
      *   <li>被套餐关联的菜品不能删除</li>
-     *   <li>需要同时删除关联的口味数据</li>
+     *   <li>采用软删除，保留历史数据用于订单统计</li>
      * </ul>
      */
     @Override
@@ -147,14 +150,47 @@ public class DishServiceImpl implements DishService {
             }
         }
 
-        List<Long> setmealIds = setmealDishMapper.getSetmealIdsByDishIds(ids);
-        if (setmealIds != null && !setmealIds.isEmpty()) {
-            throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
+        List<DishSetmealRelationVO> relations = setmealDishMapper.getDishSetmealRelations(ids);
+        if (relations != null && !relations.isEmpty()) {
+
+            // 按菜品ID分组（避免同名菜品被错误合并）
+            Map<Long, List<DishSetmealRelationVO>> groupedByDishId = relations.stream()
+                    .filter(r -> r.getDishId() != null) // 防御：避免 key 为 null
+                    .collect(Collectors.groupingBy(DishSetmealRelationVO::getDishId));
+
+            StringBuilder sb = new StringBuilder(MessageConstant.DISH_BE_RELATED_BY_SETMEAL_DETAIL);
+
+            // 稳定输出顺序（否则 HashMap 遍历顺序不固定）
+            groupedByDishId.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey()) // 按 dishId 排序
+                    .forEachOrdered(entry -> {
+                        Long dishId = entry.getKey();
+                        List<DishSetmealRelationVO> relList = entry.getValue();
+
+                        // 展示用菜品名：取本组第一个非空名称
+                        String dishName = relList.stream()
+                                .map(DishSetmealRelationVO::getDishName)
+                                .filter(Objects::nonNull)
+                                .findFirst()
+                                .orElse("未知菜品(" + dishId + ")");
+
+                        // 套餐名：去重 + 连接
+                        String setmealNames = relList.stream()
+                                .map(DishSetmealRelationVO::getSetmealName)
+                                .filter(Objects::nonNull)
+                                .distinct()
+                                .collect(Collectors.joining("、"));
+
+                        sb.append("【").append(dishName).append("→").append(setmealNames).append("】");
+                    });
+
+            throw new DeletionNotAllowedException(sb.toString());
         }
 
-        // 若存在外键约束，应先删子表再删主表
-        dishFlavorMapper.delete(ids);
-        dishMapper.delete(ids);
+
+        // 软删除：标记 is_deleted = 1，保留数据用于历史订单查询
+        // 注意：口味数据不删除，因为订单详情可能需要展示
+        dishMapper.softDelete(ids, LocalDateTime.now());
     }
 
     @Override

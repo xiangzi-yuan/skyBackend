@@ -2,8 +2,8 @@ package com.sky.converter;
 
 import com.sky.readmodel.employee.EmployeeDetailRM;
 import com.sky.readmodel.employee.EmployeePageRM;
-import com.sky.vo.EmployeeDetailVO;
-import com.sky.vo.EmployeePageVO;
+import com.sky.vo.employee.EmployeeDetailVO;
+import com.sky.vo.employee.EmployeePageVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 

@@ -3,9 +3,9 @@ package com.sky.converter;
 import com.sky.entity.DishFlavor;
 import com.sky.readmodel.dish.DishDetailRM;
 import com.sky.readmodel.dish.DishPageRM;
-import com.sky.vo.DishDetailVO;
-import com.sky.vo.DishFlavorVO;
-import com.sky.vo.DishPageVO;
+import com.sky.vo.dish.DishDetailVO;
+import com.sky.vo.dish.DishFlavorVO;
+import com.sky.vo.dish.DishPageVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 

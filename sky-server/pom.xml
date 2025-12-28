@@ -185,7 +185,7 @@
                         <arg>-J--add-opens=java.base/jdk.internal.icu.impl=ALL-UNNAMED</arg>
                         <arg>-J--add-opens=java.base/jdk.internal.icu.text=ALL-UNNAMED</arg>
                         <arg>-J--add-opens=java.base/sun.util.locale.provider=ALL-UNNAMED</arg>
-                        <arg>-J-Djava.locale.providers=COMPAT,SPI</arg>
+                        <arg>-J-Djava.locale.providers=CLDR</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

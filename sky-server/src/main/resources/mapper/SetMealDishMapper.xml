@@ -19,6 +19,42 @@
         </where>
     </select>
 
+    <select id="getSetmealNamesByDishIds" resultType="java.lang.String">
+        select distinct s.name
+        from setmeal_dish sd
+        inner join setmeal s on sd.setmeal_id = s.id and s.is_deleted = 0
+        <where>
+            <if test="dishIds != null and dishIds.size() > 0">
+                sd.dish_id in
+                <foreach collection="dishIds" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="dishIds == null or dishIds.size() == 0">
+                1 = 0
+            </if>
+        </where>
+    </select>
+
+    <select id="getDishSetmealRelations" resultType="com.sky.vo.dish.DishSetmealRelationVO">
+        select d.id as dishId, d.name as dishName, s.name as setmealName
+        from setmeal_dish sd
+        inner join setmeal s on sd.setmeal_id = s.id and s.is_deleted = 0
+        inner join dish d on sd.dish_id = d.id
+        <where>
+            <if test="dishIds != null and dishIds.size() > 0">
+                sd.dish_id in
+                <foreach collection="dishIds" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="dishIds == null or dishIds.size() == 0">
+                1 = 0
+            </if>
+        </where>
+        order by d.name, s.name
+    </select>
+
     <insert id="insertBatch">
         insert into setmeal_dish(setmeal_id, dish_id, name, price, copies)
         values

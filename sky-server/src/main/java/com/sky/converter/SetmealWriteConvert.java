@@ -1,8 +1,8 @@
 package com.sky.converter;
 
-import com.sky.dto.*;
-import com.sky.entity.Dish;
-import com.sky.entity.DishFlavor;
+import com.sky.dto.setmeal.SetmealCreateDTO;
+import com.sky.dto.setmeal.SetmealDishDTO;
+import com.sky.dto.setmeal.SetmealUpdateDTO;
 import com.sky.entity.Setmeal;
 import com.sky.entity.SetmealDish;
 import org.mapstruct.*;

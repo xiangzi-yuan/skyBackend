@@ -3,10 +3,11 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.sky.mapper.SetmealMapper">
 
-    <select id="pageQuery" resultType="com.sky.readmodel.dish.SetmealPageRM">
-        select s.id, s.name, s.category_id, s.price, s.image, s.description, s.status, s.update_time, c.name as categoryName
+    <select id="pageQuery" resultType="com.sky.readmodel.setmeal.SetmealPageRM">
+        select s.id, s.name, s.image, c.name as categoryName, s.price, s.status, s.update_time
             from setmeal s left join category c on s.category_id = c.id
         <where>
+            s.is_deleted = 0
             <if test="name != null and name != ''">
                 and s.name like concat('%',#{name},'%')
             </if>
@@ -41,6 +42,25 @@
             <if test="updateUser != null">update_user = #{updateUser}</if>
         </set>
         where id = #{id}
+    </update>
+
+    <!-- 软删除：将 is_deleted 置为 1，并记录删除时间 -->
+    <update id="softDelete">
+        update setmeal
+        set is_deleted = 1,
+        delete_time = #{deleteTime},
+        update_time = #{deleteTime}
+        <where>
+            <if test="ids != null and ids.size() > 0">
+                id in
+                <foreach collection="ids" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="ids == null or ids.size() == 0">
+                1 = 0
+            </if>
+        </where>
     </update>
 
 

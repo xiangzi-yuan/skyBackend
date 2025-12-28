@@ -37,5 +37,11 @@ public class Dish implements Serializable {
     private LocalDateTime updateTime;
     private Long createUser;
     private Long updateUser;
+    
+    // 软删除字段
+    //0 未删除 1 已删除
+    private Integer isDeleted;
+    //删除时间
+    private LocalDateTime deleteTime;
     // Entity 不包含关联集合，通过查询时单独处理
 }

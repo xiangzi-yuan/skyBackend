@@ -1,12 +1,12 @@
 package com.sky.controller.admin;
 
-import com.sky.dto.SetmealPageQueryDTO;
-import com.sky.dto.SetmealUpdateDTO;
-import com.sky.dto.SetmealCreateDTO;
+import com.sky.dto.setmeal.SetmealPageQueryDTO;
+import com.sky.dto.setmeal.SetmealUpdateDTO;
+import com.sky.dto.setmeal.SetmealCreateDTO;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.SetmealService;
-import com.sky.vo.SetmealDetailVO;
+import com.sky.vo.setmeal.SetmealDetailVO;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

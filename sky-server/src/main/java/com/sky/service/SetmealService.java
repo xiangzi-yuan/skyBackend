@@ -1,9 +1,10 @@
 package com.sky.service;
 
-import com.sky.dto.*;
+import com.sky.dto.setmeal.SetmealCreateDTO;
+import com.sky.dto.setmeal.SetmealPageQueryDTO;
+import com.sky.dto.setmeal.SetmealUpdateDTO;
 import com.sky.result.PageResult;
-import com.sky.vo.DishDetailVO;
-import com.sky.vo.SetmealDetailVO;
+import com.sky.vo.setmeal.SetmealDetailVO;
 
 import java.util.List;
 

@@ -3,21 +3,25 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.sky.mapper.CategoryMapper">
 
-    <select id="pageQuery" resultType="com.sky.entity.Category">
-        select * from category
+    <!-- 分页查询 - 返回 CategoryPageRM -->
+    <select id="pageQuery" resultType="com.sky.readmodel.category.CategoryPageRM">
+        SELECT id, name, type, sort, status, update_time
+        FROM category
         <where>
+            is_deleted = 0
             <if test="name != null and name != ''">
-                and name like concat('%',#{name},'%')
+                AND name LIKE CONCAT('%', #{name}, '%')
             </if>
             <if test="type != null">
-                and type = #{type}
+                AND type = #{type}
             </if>
         </where>
-        order by sort asc , create_time desc
+        ORDER BY sort ASC, create_time DESC
     </select>
 
+    <!-- 更新分类 -->
     <update id="update" parameterType="Category">
-        update category
+        UPDATE category
         <set>
             <if test="type != null">
                 type = #{type},
@@ -38,15 +42,17 @@
                 update_user = #{updateUser}
             </if>
         </set>
-        where id = #{id}
+        WHERE id = #{id}
     </update>
 
+    <!-- 根据类型查询分类列表（用于下拉选择） -->
     <select id="list" resultType="Category">
-        select * from category
-        where status = 1
+        SELECT * FROM category
+        WHERE status = 1 AND is_deleted = 0
         <if test="type != null">
-            and type = #{type}
+            AND type = #{type}
         </if>
-        order by sort asc,create_time desc
+        ORDER BY sort ASC, create_time DESC
     </select>
+
 </mapper>

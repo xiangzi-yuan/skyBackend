@@ -1,11 +1,11 @@
 package com.sky.converter;
 
 import com.sky.entity.SetmealDish;
-import com.sky.readmodel.dish.SetmealDetailRM;
-import com.sky.readmodel.dish.SetmealPageRM;
-import com.sky.vo.SetmealDetailVO;
-import com.sky.vo.SetmealDishVO;
-import com.sky.vo.SetmealPageVO;
+import com.sky.readmodel.setmeal.SetmealDetailRM;
+import com.sky.readmodel.setmeal.SetmealPageRM;
+import com.sky.vo.setmeal.SetmealDetailVO;
+import com.sky.vo.setmeal.SetmealDishVO;
+import com.sky.vo.setmeal.SetmealPageVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 

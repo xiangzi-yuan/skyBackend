@@ -2,22 +2,23 @@ package com.sky.mapper;
 
 import com.github.pagehelper.Page;
 import com.sky.annotation.AutoFill;
-import com.sky.dto.DishPageQueryDTO;
+import com.sky.dto.dish.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.enumeration.OperationType;
 import com.sky.readmodel.dish.DishDetailRM;
 import com.sky.readmodel.dish.DishPageRM;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
 public interface DishMapper {
 
     /**
-     * 根据分类id查询菜品数量
+     * 根据分类id查询菜品数量（排除已删除）
      */
-    @Select("select count(id) from dish where category_id = #{categoryId}")
+    @Select("select count(id) from dish where category_id = #{categoryId} and is_deleted = 0")
     Integer countByCategoryId(Long categoryId);
 
 
@@ -27,7 +28,7 @@ public interface DishMapper {
     Page<DishPageRM> pageQuery(DishPageQueryDTO dto);
 
     /**
-     * 根据ID查询菜品详情（含分类名称）
+     * 根据ID查询菜品详情（含分类名称，排除已删除）
      */
     @Select(
             "select d.id, " +
@@ -37,16 +38,15 @@ public interface DishMapper {
                     "       d.price, " +
                     "       d.image, " +
                     "       d.description, " +
-                    "       d.status, " +
-                    "       d.update_time " +
+                    "       d.status " +
                     "from dish d " +
                     "left join category c on d.category_id = c.id " +
-                    "where d.id = #{id}"
+                    "where d.id = #{id} and d.is_deleted = 0"
     )
     DishDetailRM getDetailById(Long id);
 
     @Select("""
-            select * from dish where category_id = #{categoryId}
+            select * from dish where category_id = #{categoryId} and is_deleted = 0
             """
     )
     List<DishDetailRM> getByCategoryId(Long categoryId);
@@ -63,7 +63,10 @@ public interface DishMapper {
     )
     void insert(Dish dish);
 
-    void delete(@Param("ids") List<Long> ids);
+    /**
+     * 软删除菜品（批量）
+     */
+    void softDelete(@Param("ids") List<Long> ids, @Param("deleteTime") LocalDateTime deleteTime);
 
     @AutoFill(OperationType.UPDATE)
     void updateStatus(Dish dish);

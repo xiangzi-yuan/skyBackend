@@ -1,7 +1,7 @@
 package com.sky.converter;
 
-import com.sky.dto.EmployeeCreateDTO;
-import com.sky.dto.EmployeeUpdateDTO;
+import com.sky.dto.employee.EmployeeCreateDTO;
+import com.sky.dto.employee.EmployeeUpdateDTO;
 import com.sky.entity.Employee;
 import org.mapstruct.*;
 

@@ -2,30 +2,32 @@ package com.sky.service.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.converter.SetmealReadConvert;
 import com.sky.converter.SetmealWriteConvert;
-import com.sky.dto.DishPageQueryDTO;
-import com.sky.dto.SetmealCreateDTO;
-import com.sky.dto.SetmealPageQueryDTO;
-import com.sky.dto.SetmealUpdateDTO;
+import com.sky.dto.setmeal.SetmealCreateDTO;
+import com.sky.dto.setmeal.SetmealPageQueryDTO;
+import com.sky.dto.setmeal.SetmealUpdateDTO;
 import com.sky.entity.Setmeal;
 import com.sky.entity.SetmealDish;
+import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.SetmealDishMapper;
 import com.sky.mapper.SetmealMapper;
-import com.sky.readmodel.dish.DishPageRM;
-import com.sky.readmodel.dish.SetmealDetailRM;
-import com.sky.readmodel.dish.SetmealPageRM;
+import com.sky.readmodel.setmeal.SetmealDetailRM;
+import com.sky.readmodel.setmeal.SetmealPageRM;
 import com.sky.result.PageResult;
 import com.sky.service.SetmealService;
-import com.sky.vo.DishPageVO;
-import com.sky.vo.SetmealDetailVO;
-import com.sky.vo.SetmealDishVO;
-import com.sky.vo.SetmealPageVO;
+import com.sky.vo.setmeal.SetmealDetailVO;
+import com.sky.vo.setmeal.SetmealDishVO;
+import com.sky.vo.setmeal.SetmealPageVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -130,9 +132,39 @@ public class SetmealServiceImpl implements SetmealService {
     }
 
 
+    /**
+     * 删除套餐（支持批量）- 软删除
+     *
+     * <p>业务规则：
+     * <ul>
+     *   <li>起售中的套餐不能删除</li>
+     *   <li>采用软删除，保留历史数据用于订单统计</li>
+     *   <li>套餐-菜品关联表不删除，因为订单详情可能需要展示</li>
+     * </ul>
+     *
+     * @param ids 套餐ID列表
+     */
     @Override
+    @Transactional
     public void delete(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
 
+        // 1. 校验：起售中的套餐不能删除
+        for (Long id : ids) {
+            SetmealDetailRM setmealRM = setmealMapper.getDetailById(id);
+            if (setmealRM == null) {
+                continue;
+            }
+            if (Objects.equals(setmealRM.getStatus(), StatusConstant.ENABLE)) {
+                throw new DeletionNotAllowedException(MessageConstant.SETMEAL_ON_SALE);
+            }
+        }
+
+        // 2. 软删除：标记 is_deleted = 1，保留数据用于历史订单查询
+        // 注意：setmeal_dish 关联表数据不删除，因为订单详情可能需要展示套餐内容
+        setmealMapper.softDelete(ids, LocalDateTime.now());
     }
 
     @Override

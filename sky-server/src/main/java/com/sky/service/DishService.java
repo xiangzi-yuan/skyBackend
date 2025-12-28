@@ -1,11 +1,11 @@
 package com.sky.service;
 
 
-import com.sky.dto.DishCreateDTO;
-import com.sky.dto.DishPageQueryDTO;
-import com.sky.dto.DishUpdateDTO;
+import com.sky.dto.dish.DishCreateDTO;
+import com.sky.dto.dish.DishPageQueryDTO;
+import com.sky.dto.dish.DishUpdateDTO;
 import com.sky.result.PageResult;
-import com.sky.vo.DishDetailVO;
+import com.sky.vo.dish.DishDetailVO;
 
 import java.util.List;
 

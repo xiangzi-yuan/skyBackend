@@ -2,26 +2,26 @@ package com.sky.mapper;
 
 import com.github.pagehelper.Page;
 import com.sky.annotation.AutoFill;
-import com.sky.dto.SetmealPageQueryDTO;
+import com.sky.dto.setmeal.SetmealPageQueryDTO;
 import com.sky.entity.Setmeal;
 import com.sky.enumeration.OperationType;
-import com.sky.readmodel.dish.SetmealDetailRM;
-import com.sky.readmodel.dish.SetmealPageRM;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Options;
-import org.apache.ibatis.annotations.Select;
+import com.sky.readmodel.setmeal.SetmealDetailRM;
+import com.sky.readmodel.setmeal.SetmealPageRM;
+import org.apache.ibatis.annotations.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Mapper
 public interface SetmealMapper {
 
     /**
-     * 根据分类id查询套餐的数量
+     * 根据分类id查询套餐的数量（排除已删除）
      *
      * @param id
      * @return
      */
-    @Select("select count(id) from setmeal where category_id = #{categoryId}")
+    @Select("select count(id) from setmeal where category_id = #{categoryId} and is_deleted = 0")
     Integer countByCategoryId(Long id);
 
 
@@ -40,15 +40,14 @@ public interface SetmealMapper {
             select
               s.id          as id,
               s.category_id as categoryId,
-              c.name        as categoryName,
               s.name        as name,
               s.price       as price,
-              s.status      as status,
               s.description as description,
-              s.image       as image
+              s.image       as image,
+              s.status      as status
             from setmeal s
             left join category c on s.category_id = c.id
-            where s.id = #{id}
+            where s.id = #{id} and s.is_deleted = 0
             """)
     SetmealDetailRM getDetailById(Long id);
 
@@ -57,4 +56,9 @@ public interface SetmealMapper {
 
     @AutoFill(OperationType.UPDATE)
     void updateStatus(Setmeal setmeal);
+
+    /**
+     * 软删除套餐（批量）
+     */
+    void softDelete(@Param("ids") List<Long> ids, @Param("deleteTime") LocalDateTime deleteTime);
 }

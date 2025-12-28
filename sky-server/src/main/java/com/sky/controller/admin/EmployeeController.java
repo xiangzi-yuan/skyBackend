@@ -1,11 +1,15 @@
 package com.sky.controller.admin;
 
 import com.sky.dto.*;
+import com.sky.dto.employee.EmployeeCreateDTO;
+import com.sky.dto.employee.EmployeeLoginDTO;
+import com.sky.dto.employee.EmployeePageQueryDTO;
+import com.sky.dto.employee.EmployeeUpdateDTO;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.EmployeeService;
-import com.sky.vo.EmployeeDetailVO;
-import com.sky.vo.EmployeeLoginVO;
+import com.sky.vo.employee.EmployeeDetailVO;
+import com.sky.vo.employee.EmployeeLoginVO;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

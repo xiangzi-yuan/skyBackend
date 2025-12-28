@@ -18,6 +18,16 @@ public interface SetmealDishMapper {
     //没写 @Param("dishIds")，xml 的 collection 通常要写 list
     List<Long> getSetmealIdsByDishIds(@Param("dishIds") List<Long> dishIds);
 
+    /**
+     * 根据菜品ID列表查询关联的套餐名称（用于删除时的错误提示）
+     */
+    List<String> getSetmealNamesByDishIds(@Param("dishIds") List<Long> dishIds);
+
+    /**
+     * 根据菜品ID列表查询菜品与套餐的关联关系（用于删除时的详细错误提示）
+     */
+    List<com.sky.vo.dish.DishSetmealRelationVO> getDishSetmealRelations(@Param("dishIds") List<Long> dishIds);
+
     void insertBatch(@Param("setmealDishes") List<SetmealDish> setmealDishes);
 
     @Delete("delete from setmeal_dish where setmeal_id = #{setmealId}")

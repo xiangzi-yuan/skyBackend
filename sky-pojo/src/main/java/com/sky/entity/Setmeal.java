@@ -47,4 +47,10 @@ public class Setmeal implements Serializable {
     private Long createUser;
 
     private Long updateUser;
+
+    // 软删除字段
+    //0 未删除 1 已删除
+    private Integer isDeleted;
+    //删除时间
+    private LocalDateTime deleteTime;
 }
