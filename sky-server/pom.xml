@@ -150,10 +150,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>16</source>
-                    <target>16</target>
-                    <encoding>UTF-8</encoding>
+                  <configuration>
+                      <source>${java.version}</source>
+                      <target>${java.version}</target>
+                      <encoding>UTF-8</encoding>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
@@ -182,6 +182,10 @@
                         <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
                         <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
                         <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=java.base/jdk.internal.icu.impl=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=java.base/jdk.internal.icu.text=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=java.base/sun.util.locale.provider=ALL-UNNAMED</arg>
+                        <arg>-J-Djava.locale.providers=COMPAT,SPI</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

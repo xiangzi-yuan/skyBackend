@@ -1,11 +1,8 @@
 package com.sky.controller.admin;
 
-import com.sky.context.BaseContext;
-import com.sky.dto.DishDTO;
+import com.sky.dto.DishCreateDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.dto.DishUpdateDTO;
-import com.sky.dto.EmployeeUpdateDTO;
-import com.sky.entity.Employee;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.DishService;
@@ -27,8 +24,8 @@ public class DishController {
 
     @PostMapping
     @ApiOperation("新增菜品")
-    public Result<String> saveDish(@RequestBody DishDTO dto) {
-        log.info("新增菜品：username={}", dto.getName());
+    public Result<String> saveDish(@RequestBody DishCreateDTO dto) {
+        log.info("新增菜品：name={}", dto.getName());
         dishService.save(dto);
         return Result.success();
     }
@@ -48,6 +45,13 @@ public class DishController {
         return Result.success(dishDetailVO);
     }
 
+    @GetMapping("/list")
+    @ApiOperation("根据分类查询菜品")
+    public Result<List<DishDetailVO>>  getByCategoryId(@RequestParam Long categoryId){
+        log.info("根据分类id:{}查询菜品", categoryId);
+        List<DishDetailVO> dishDetailVOList = dishService.getByCategoryId(categoryId);
+        return Result.success(dishDetailVOList);
+    }
     /**
      * 删除菜品
      * 业务规则:
@@ -82,7 +86,7 @@ public class DishController {
 
     @PutMapping
     @ApiOperation("修改菜品信息")
-    public Result<String> changeEmployee(@RequestBody DishUpdateDTO dto) {
+    public Result<String> changeDish(@RequestBody DishUpdateDTO dto) {
         if (dto.getId() == null) {
             throw new IllegalArgumentException("id is required");
         }

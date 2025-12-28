@@ -9,10 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class SetmealDTO implements Serializable {
+public class SetmealUpdateDTO implements Serializable {
 
-    private Long id;
-
+    private Long id; // 修改必须要id
     //分类id
     private Long categoryId;
 
@@ -32,6 +31,6 @@ public class SetmealDTO implements Serializable {
     private String image;
 
     //套餐菜品关系
-    private List<SetmealDish> setmealDishes = new ArrayList<>();
+    private List<SetmealDishDTO> setmealDishes;
 
 }

@@ -4,20 +4,17 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
-import com.sky.context.BaseContext;
 import com.sky.converter.DishReadConvert;
 import com.sky.converter.DishWriteConvert;
-import com.sky.dto.DishDTO;
+import com.sky.dto.DishCreateDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.dto.DishUpdateDTO;
-import com.sky.dto.EmployeeUpdateDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
-import com.sky.entity.Employee;
 import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.DishFlavorMapper;
 import com.sky.mapper.DishMapper;
-import com.sky.mapper.SetMealDishMapper;
+import com.sky.mapper.SetmealDishMapper;
 import com.sky.readmodel.dish.DishDetailRM;
 import com.sky.readmodel.dish.DishPageRM;
 import com.sky.result.PageResult;
@@ -30,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,20 +42,20 @@ public class DishServiceImpl implements DishService {
     @Autowired
     private DishReadConvert dishReadConvert;
     @Autowired
-    private SetMealDishMapper setMealDishMapper;
+    private SetmealDishMapper setmealDishMapper;
 
 
 
     @Override
     @Transactional
-    public void save(DishDTO dto) {
+    public void save(DishCreateDTO dto) {
         Dish dish = dishWriteConvert.fromCreateDTO(dto);
 
         dish.setStatus(StatusConstant.DISABLE);
 
         dishMapper.insert(dish);
 
-        // 2. 获取自增的菜品ID（@Options 配置会自动回填到 dish.id）
+        // 2. 获取自增的菜品ID（@Options 会自动回填到 dish.id）
         Long dishId = dish.getId();
 
         // 3. 处理口味数据
@@ -112,38 +110,51 @@ public class DishServiceImpl implements DishService {
         return vo;
     }
 
+    @Override
+    public List<DishDetailVO> getByCategoryId(Long categoryId) {
+
+        List<DishDetailRM> dishDetailRMList = dishMapper.getByCategoryId(categoryId);
+        List<DishDetailVO> voList = dishDetailRMList.stream()
+                .map(dishReadConvert::toDetailVO)
+                .toList();
+        return voList;
+    }
+
     /**
-     * 删除菜品
-     * <p>
-     * 业务规则:
-     * 可以一次删除一个菜品
-     * 也可以批量删除菜品
-     * 起售中的菜品不能删除
-     * 被套餐关联的菜品不能删除删除
-     * 菜品关联的口味数据也需要删除
+     * 删除菜品（支持批量）
+     *
+     * <p>业务规则：
+     * <ul>
+     *   <li>起售中的菜品不能删除</li>
+     *   <li>被套餐关联的菜品不能删除</li>
+     *   <li>需要同时删除关联的口味数据</li>
+     * </ul>
      */
     @Override
     @Transactional
     public void delete(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
 
-        if(ids != null && !ids.isEmpty())
         for (Long id : ids) {
-            // 检查状态
             DishDetailRM dishRM = dishMapper.getDetailById(id);
-            if (dishRM.getStatus() == StatusConstant.ENABLE) {
-                // 起售状态
+            if (dishRM == null) {
+                continue;
+            }
+            if (Objects.equals(dishRM.getStatus(), StatusConstant.ENABLE)) {
                 throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
             }
         }
 
-        List<Long> setMealIds = setMealDishMapper.getSetMealIdsByDishIds(ids);
-        if (setMealIds != null && !setMealIds.isEmpty()) {
-            // 当前菜品被套餐关联了,全部不能删除
+        List<Long> setmealIds = setmealDishMapper.getSetmealIdsByDishIds(ids);
+        if (setmealIds != null && !setmealIds.isEmpty()) {
             throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
         }
-        // 允许删除
-        dishMapper.delete(ids);
+
+        // 若存在外键约束，应先删子表再删主表
         dishFlavorMapper.delete(ids);
+        dishMapper.delete(ids);
     }
 
     @Override
@@ -155,7 +166,7 @@ public class DishServiceImpl implements DishService {
     }
 
     /**
-     * 修改菜品：UpdateDTO -> Entity(局部更新) 用 MapStruct
+     * 修改菜品：UpdateDTO -> Entity（局部更新）
      */
     @Override
     @Transactional
@@ -168,16 +179,16 @@ public class DishServiceImpl implements DishService {
         // 1) 更新主表
         Dish dish = new Dish();
         dish.setId(dishId);
-        dishWriteConvert.mergeUpdate(dto, dish); // mergeUpdate 内忽略 id 是对的
+        dishWriteConvert.mergeUpdate(dto, dish);
         int rows = dishMapper.update(dish);
         if (rows != 1) {
             throw new RuntimeException("菜品不存在或更新失败, id=" + dishId);
         }
 
-        // 2) 子表：先删（没给口味也清空）
+        // 2) 子表：先删（未传口味也清空）
         dishFlavorMapper.deleteByDishId(dishId);
 
-        // 3) 有口味则插入（无/空则保持清空）
+        // 3) 有口味则插入；无/空则保持清空
         if (dto.getFlavors() == null || dto.getFlavors().isEmpty()) {
             return;
         }
@@ -197,3 +208,5 @@ public class DishServiceImpl implements DishService {
 
 
 }
+
+

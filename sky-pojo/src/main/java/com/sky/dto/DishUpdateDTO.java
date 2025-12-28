@@ -9,13 +9,13 @@ import java.util.List;
 @Data
 public class DishUpdateDTO implements Serializable {
 
-    private Long id;
+    private Long id; // 必须要
     private String name;
     private Long categoryId;
     private BigDecimal price;
     private String image;
     private String description;
-    private Integer status;
+    // private Integer status; // 修改时不修改状态, 转换器也不用忽略
     private List<DishFlavorDTO> flavors;
 
 }

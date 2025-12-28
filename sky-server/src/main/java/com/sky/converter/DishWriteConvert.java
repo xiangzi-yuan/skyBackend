@@ -1,6 +1,6 @@
 package com.sky.converter;
 
-import com.sky.dto.DishDTO;
+import com.sky.dto.DishCreateDTO;
 import com.sky.dto.DishFlavorDTO;
 import com.sky.dto.DishUpdateDTO;
 import com.sky.entity.Dish;
@@ -33,26 +33,12 @@ public interface DishWriteConvert {
             @Mapping(target = "createUser", ignore = true),
             @Mapping(target = "updateUser", ignore = true)
     })
-    Dish fromCreateDTO(DishDTO dto);
+    Dish fromCreateDTO(DishCreateDTO dto);
 
     /**
      * 修改菜品：DTO -> Entity（局部更新）
      * null 不覆盖；flavors 仍由 Service 处理
-     * 如果你们“编辑接口不允许改 status”，这里继续 ignore status
      */
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mappings({
-            @Mapping(target = "id", ignore = true),
-
-            @Mapping(target = "status", ignore = true),
-
-            @Mapping(target = "createTime", ignore = true),
-            @Mapping(target = "updateTime", ignore = true),
-            @Mapping(target = "createUser", ignore = true),
-            @Mapping(target = "updateUser", ignore = true)
-    })
-    void mergeUpdate(DishDTO dto, @MappingTarget Dish dish);
-
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mappings({
             @Mapping(target = "id", ignore = true),

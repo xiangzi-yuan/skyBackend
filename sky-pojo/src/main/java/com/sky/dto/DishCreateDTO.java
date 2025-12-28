@@ -7,9 +7,8 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Data
-public class DishDTO implements Serializable {
+public class DishCreateDTO implements Serializable {
 
-    private Long id;
     //菜品名称
     private String name;
     //菜品分类id

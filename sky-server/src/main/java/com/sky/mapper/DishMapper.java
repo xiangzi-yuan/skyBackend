@@ -7,11 +7,7 @@ import com.sky.entity.Dish;
 import com.sky.enumeration.OperationType;
 import com.sky.readmodel.dish.DishDetailRM;
 import com.sky.readmodel.dish.DishPageRM;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Options;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
@@ -24,15 +20,6 @@ public interface DishMapper {
     @Select("select count(id) from dish where category_id = #{categoryId}")
     Integer countByCategoryId(Long categoryId);
 
-    @AutoFill(OperationType.INSERT)
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    @Insert(
-            "insert into dish " +
-                    "(name, category_id, price, image, description, status, create_time, update_time, create_user, update_user) " +
-                    "values " +
-                    "(#{name}, #{categoryId}, #{price}, #{image}, #{description}, #{status}, #{createTime}, #{updateTime}, #{createUser}, #{updateUser})"
-    )
-    void insert(Dish dish);
 
     /**
      * 分页查询
@@ -58,7 +45,24 @@ public interface DishMapper {
     )
     DishDetailRM getDetailById(Long id);
 
-/************************************************* 写 ***********************************/
+    @Select("""
+            select * from dish where category_id = #{categoryId}
+            """
+    )
+    List<DishDetailRM> getByCategoryId(Long categoryId);
+
+    /************************************************* 写 ***********************************/
+
+    @AutoFill(OperationType.INSERT)
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    @Insert(
+            "insert into dish " +
+                    "(name, category_id, price, image, description, status, create_time, update_time, create_user, update_user) " +
+                    "values " +
+                    "(#{name}, #{categoryId}, #{price}, #{image}, #{description}, #{status}, #{createTime}, #{updateTime}, #{createUser}, #{updateUser})"
+    )
+    void insert(Dish dish);
+
     void delete(@Param("ids") List<Long> ids);
 
     @AutoFill(OperationType.UPDATE)
@@ -66,4 +70,6 @@ public interface DishMapper {
 
     @AutoFill(OperationType.UPDATE)
     int update(Dish dish);
+
+
 }

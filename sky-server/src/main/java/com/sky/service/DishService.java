@@ -1,7 +1,7 @@
 package com.sky.service;
 
 
-import com.sky.dto.DishDTO;
+import com.sky.dto.DishCreateDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.dto.DishUpdateDTO;
 import com.sky.result.PageResult;
@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface DishService {
 
-    void save(DishDTO dto);
+    void save(DishCreateDTO dto);
 
     PageResult pageQuery(DishPageQueryDTO dto);
     
@@ -22,9 +22,13 @@ public interface DishService {
      */
     DishDetailVO getDetailById(Long id);
 
+    List<DishDetailVO> getByCategoryId(Long categoryId);
+
     void delete(List<Long> ids);
 
     void updateStatus(Long id, Integer status);
 
     void changeDish(DishUpdateDTO dto);
+
+
 }
