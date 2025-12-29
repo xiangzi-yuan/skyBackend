@@ -1,5 +1,6 @@
 package com.sky.dto.category;
 
+import com.sky.constant.ValidationMessageConstant;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
@@ -28,18 +29,18 @@ public class CategoryUpdateDTO implements Serializable {
     /**
      * 分类ID（必须）
      */
-    @NotNull(message = "分类ID不能为空")
+    @NotNull(message = ValidationMessageConstant.CATEGORY_ID_REQUIRED)
     private Long id;
 
     /**
      * 分类名称
      */
-    @NotBlank(message = "分类名称不能为空")
+    @NotBlank(message = ValidationMessageConstant.CATEGORY_NAME_REQUIRED)
     private String name;
 
     /**
      * 排序
      */
-    @NotNull(message = "排序不能为空")
+    @NotNull(message = ValidationMessageConstant.SORT_REQUIRED)
     private Integer sort;
 }

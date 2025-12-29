@@ -211,9 +211,6 @@ public class DishServiceImpl implements DishService {
     @Transactional
     public void changeDish(DishUpdateDTO dto) {
         Long dishId = dto.getId();
-        if (dishId == null) {
-            throw new IllegalArgumentException("dishId 不能为空");
-        }
 
         // 1) 更新主表
         Dish dish = new Dish();
@@ -221,7 +218,7 @@ public class DishServiceImpl implements DishService {
         dishWriteConvert.mergeUpdate(dto, dish);
         int rows = dishMapper.update(dish);
         if (rows != 1) {
-            throw new RuntimeException("菜品不存在或更新失败, id=" + dishId);
+            throw new IllegalArgumentException(MessageConstant.DISH_NOT_FOUND_OR_UPDATE_FAILED + ", id=" + dishId);
         }
 
         // 2) 子表：先删（未传口味也清空）

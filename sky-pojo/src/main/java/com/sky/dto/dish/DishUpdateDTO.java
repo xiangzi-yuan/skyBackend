@@ -1,7 +1,9 @@
 package com.sky.dto.dish;
 
+import com.sky.constant.ValidationMessageConstant;
 import lombok.Data;
 
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
@@ -9,6 +11,7 @@ import java.util.List;
 @Data
 public class DishUpdateDTO implements Serializable {
 
+    @NotNull(message = ValidationMessageConstant.ID_REQUIRED)
     private Long id; // 必须要
     private String name;
     private Long categoryId;

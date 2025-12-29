@@ -17,7 +17,7 @@ public class ShopController {
     public static final String KEY = "SHOP_STATUS";
 
     @Autowired
-    private RedisTemplate redisTemplate;
+    private RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 获取店铺营业状态

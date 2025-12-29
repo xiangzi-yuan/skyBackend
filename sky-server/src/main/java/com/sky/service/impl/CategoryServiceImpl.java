@@ -4,7 +4,6 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
-import com.sky.context.BaseContext;
 import com.sky.converter.CategoryReadConvert;
 import com.sky.converter.CategoryWriteConvert;
 import com.sky.dto.category.CategoryCreateDTO;
@@ -55,12 +54,8 @@ public class CategoryServiceImpl implements CategoryService {
         // DTO -> Entity
         Category category = categoryWriteConvert.fromCreateDTO(dto);
 
-        // 填充系统字段
+        // 业务字段
         category.setStatus(StatusConstant.DISABLE); // 新建默认禁用
-        category.setCreateTime(LocalDateTime.now());
-        category.setUpdateTime(LocalDateTime.now());
-        category.setCreateUser(BaseContext.getCurrentId());
-        category.setUpdateUser(BaseContext.getCurrentId());
 
         categoryMapper.insert(category);
     }
@@ -119,15 +114,11 @@ public class CategoryServiceImpl implements CategoryService {
         // 先查询原实体
         Category category = categoryMapper.getEntityById(dto.getId());
         if (category == null) {
-            throw new RuntimeException("分类不存在");
+            throw new IllegalArgumentException(MessageConstant.CATEGORY_NOT_FOUND);
         }
 
         // DTO 合并到 Entity（只更新允许修改的字段）
         categoryWriteConvert.mergeUpdate(dto, category);
-
-        // 填充系统字段
-        category.setUpdateTime(LocalDateTime.now());
-        category.setUpdateUser(BaseContext.getCurrentId());
 
         categoryMapper.update(category);
     }
@@ -142,8 +133,6 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = Category.builder()
                 .id(id)
                 .status(status)
-                .updateTime(LocalDateTime.now())
-                .updateUser(BaseContext.getCurrentId())
                 .build();
         categoryMapper.update(category);
     }

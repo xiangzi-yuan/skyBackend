@@ -28,6 +28,12 @@ public class GlobalExceptionHandler {
         return Result.error(ex.getMessage());
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public Result<?> handleIllegalArg(IllegalArgumentException ex) {
+        log.warn("参数异常：{}", ex.getMessage());
+        return Result.error(ex.getMessage());
+    }
+
     @ExceptionHandler(org.springframework.dao.DuplicateKeyException.class)
     public Result exceptionHandler(org.springframework.dao.DuplicateKeyException ex) {
         return Result.error(MessageConstant.ALREADY_EXISTS);
@@ -38,7 +44,7 @@ public class GlobalExceptionHandler {
         String msg = ex.getBindingResult().getFieldErrors().stream()
                 .findFirst()
                 .map(e -> e.getField() + " " + e.getDefaultMessage())
-                .orElse("参数校验失败");
+                .orElse(MessageConstant.PARAM_VALID_FAILED);
         return Result.error(msg);
     }
 
@@ -47,8 +53,14 @@ public class GlobalExceptionHandler {
         String msg = ex.getConstraintViolations().stream()
                 .findFirst()
                 .map(v -> v.getMessage())
-                .orElse("参数校验失败");
+                .orElse(MessageConstant.PARAM_VALID_FAILED);
         return Result.error(msg);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public Result<?> handleAny(Exception ex) {
+        log.error("系统异常", ex);
+        return Result.error(MessageConstant.UNKNOWN_ERROR);
     }
 
 

@@ -1,7 +1,9 @@
 package com.sky.dto.setmeal;
 
+import com.sky.constant.ValidationMessageConstant;
 import lombok.Data;
 
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
@@ -12,6 +14,7 @@ public class SetmealUpdateDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /** 套餐ID（必须） */
+    @NotNull(message = ValidationMessageConstant.ID_REQUIRED)
     private Long id;
 
     /** 分类ID */

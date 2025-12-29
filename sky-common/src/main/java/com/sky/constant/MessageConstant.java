@@ -28,4 +28,19 @@ public class MessageConstant {
     public static final String ORDER_STATUS_ERROR = "订单状态错误";
     public static final String ORDER_NOT_FOUND = "订单不存在";
     public static final String NO_PERMISSION = "无权限";
+
+    // ===== 通用校验/参数错误 =====
+    public static final String PARAM_VALID_FAILED = "参数校验失败";
+    public static final String ID_REQUIRED = "id不能为空";
+    public static final String STATUS_MUST_BE_0_OR_1 = "status must be 0 or 1";
+
+    // ===== 业务不存在/状态不允许 =====
+    public static final String CATEGORY_NOT_FOUND = "分类不存在";
+    public static final String DISH_NOT_FOUND_OR_UPDATE_FAILED = "菜品不存在或更新失败";
+    public static final String SETMEAL_NOT_FOUND = "套餐不存在";
+    public static final String SETMEAL_NOT_FOUND_OR_UPDATE_FAILED = "套餐不存在或更新失败";
+
+    // ===== 密码相关 =====
+    public static final String OLD_NEW_PASSWORD_REQUIRED = "oldPassword/newPassword is required";
+    public static final String NEW_PASSWORD_SAME_AS_OLD = "新密码不能与旧密码相同";
 }

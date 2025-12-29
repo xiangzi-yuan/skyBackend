@@ -1,5 +1,6 @@
 package com.sky.controller.admin;
 
+import com.sky.constant.MessageConstant;
 import com.sky.dto.*;
 import com.sky.dto.employee.EmployeeCreateDTO;
 import com.sky.dto.employee.EmployeeLoginDTO;
@@ -16,9 +17,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+
 @RestController
 @RequestMapping("/admin/employee")
 @Slf4j
+@Validated
 public class EmployeeController {
 
     @Autowired
@@ -26,7 +33,7 @@ public class EmployeeController {
 
     @PostMapping("/login")
     @ApiOperation("员工登录")
-    public Result<EmployeeLoginVO> login(@RequestBody EmployeeLoginDTO employeeLoginDTO) {
+    public Result<EmployeeLoginVO> login(@Valid @RequestBody EmployeeLoginDTO employeeLoginDTO) {
         log.info("员工登录：{}", employeeLoginDTO.getUsername());
         return Result.success(employeeService.login(employeeLoginDTO));
     }
@@ -47,7 +54,7 @@ public class EmployeeController {
 
     @PutMapping("/editPassword")
     @ApiOperation("修改密码")
-    public Result<String> changePassword(@RequestBody PasswordEditDTO passwordEditDTO) {
+    public Result<String> changePassword(@Valid @RequestBody PasswordEditDTO passwordEditDTO) {
         log.info("修改密码请求");
         employeeService.changePassword(passwordEditDTO);
         return Result.success();
@@ -67,23 +74,17 @@ public class EmployeeController {
 
     @PutMapping
     @ApiOperation("修改员工信息")
-    public Result<String> changeEmployee(@RequestBody EmployeeUpdateDTO dto) {
-        if (dto.getId() == null) {
-            throw new IllegalArgumentException("id is required");
-        }
+    public Result<String> changeEmployee(@Valid @RequestBody EmployeeUpdateDTO dto) {
         employeeService.changeEmployee(dto);
         return Result.success();
     }
 
     @PostMapping("/status/{status}")
     @ApiOperation("启用,禁用员工账号")
-    public Result<?> updateStatus(@PathVariable Integer status, @RequestParam Long id) {
-        if (status == null || (status != 0 && status != 1)) {
-            return Result.error("status must be 0 or 1");
-        }
-        if (id == null) {
-            return Result.error("id is required");
-        }
+    public Result<?> updateStatus(
+            @PathVariable @Min(value = 0, message = MessageConstant.STATUS_MUST_BE_0_OR_1) @Max(value = 1, message = MessageConstant.STATUS_MUST_BE_0_OR_1) Integer status,
+            @RequestParam @NotNull(message = MessageConstant.ID_REQUIRED) Long id
+    ) {
         employeeService.updateStatus(id, status);
         return Result.success();
     }

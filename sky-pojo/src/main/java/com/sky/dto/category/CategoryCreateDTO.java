@@ -1,5 +1,6 @@
 package com.sky.dto.category;
 
+import com.sky.constant.ValidationMessageConstant;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
@@ -26,18 +27,18 @@ public class CategoryCreateDTO implements Serializable {
      * 类型：1-菜品分类 2-套餐分类
      * 由前端按钮决定（新增菜品分类/新增套餐分类）
      */
-    @NotNull(message = "分类类型不能为空")
+    @NotNull(message = ValidationMessageConstant.CATEGORY_TYPE_REQUIRED)
     private Integer type;
 
     /**
      * 分类名称
      */
-    @NotBlank(message = "分类名称不能为空")
+    @NotBlank(message = ValidationMessageConstant.CATEGORY_NAME_REQUIRED)
     private String name;
 
     /**
      * 排序
      */
-    @NotNull(message = "排序不能为空")
+    @NotNull(message = ValidationMessageConstant.SORT_REQUIRED)
     private Integer sort;
 }

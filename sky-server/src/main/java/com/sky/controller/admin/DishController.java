@@ -1,5 +1,6 @@
 package com.sky.controller.admin;
 
+import com.sky.constant.MessageConstant;
 import com.sky.dto.dish.DishCreateDTO;
 import com.sky.dto.dish.DishPageQueryDTO;
 import com.sky.dto.dish.DishUpdateDTO;
@@ -10,13 +11,19 @@ import com.sky.vo.dish.DishDetailVO;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @RestController
 @RequestMapping("/admin/dish")
 @Slf4j
+@Validated
 public class DishController {
     @Autowired
     private DishService dishService;
@@ -24,7 +31,7 @@ public class DishController {
 
     @PostMapping
     @ApiOperation("新增菜品")
-    public Result<String> saveDish(@RequestBody DishCreateDTO dto) {
+    public Result<String> saveDish(@Valid @RequestBody DishCreateDTO dto) {
         log.info("新增菜品：name={}", dto.getName());
         dishService.save(dto);
         return Result.success();
@@ -70,13 +77,10 @@ public class DishController {
 
     @PostMapping("/status/{status}")
     @ApiOperation("起售和停售")
-    public Result<String> updateDishSaleStatus(@PathVariable Integer status, @RequestParam Long id) {
-        if (status == null || (status != 0 && status != 1)) {
-            return Result.error("status must be 0 or 1");
-        }
-        if (id == null) {
-            return Result.error("id is required");
-        }
+    public Result<String> updateDishSaleStatus(
+            @PathVariable @Min(value = 0, message = MessageConstant.STATUS_MUST_BE_0_OR_1) @Max(value = 1, message = MessageConstant.STATUS_MUST_BE_0_OR_1) Integer status,
+            @RequestParam @NotNull(message = MessageConstant.ID_REQUIRED) Long id
+    ) {
         if (status == 0) log.info("停售菜品: {}", id);
         else log.info("起售菜品: {}", id);
 
@@ -86,10 +90,7 @@ public class DishController {
 
     @PutMapping
     @ApiOperation("修改菜品信息")
-    public Result<String> changeDish(@RequestBody DishUpdateDTO dto) {
-        if (dto.getId() == null) {
-            throw new IllegalArgumentException("id is required");
-        }
+    public Result<String> changeDish(@Valid @RequestBody DishUpdateDTO dto) {
         dishService.changeDish(dto);
         return Result.success();
     }

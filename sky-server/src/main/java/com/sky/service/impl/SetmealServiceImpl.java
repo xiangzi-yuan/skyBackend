@@ -42,6 +42,7 @@ public class SetmealServiceImpl implements SetmealService {
     SetmealReadConvert setmealReadConvert;
 
     @Override
+    @Transactional
     public void save(SetmealCreateDTO dto) {
         Setmeal setmeal = setmealWriteConvert.fromCreateDTO(dto);
         setmeal.setStatus(StatusConstant.DISABLE); // 设置忽略的状态变量,初始为停售
@@ -74,18 +75,16 @@ public class SetmealServiceImpl implements SetmealService {
      * 修改菜品：UpdateDTO -> Entity（局部更新）
      */
     @Override
+    @Transactional
     public void changeSetmeal(SetmealUpdateDTO dto) {
         Long setmealId = dto.getId();
-        if (setmealId == null) {
-            throw new IllegalArgumentException("setmealId 不能为空");
-        }
         Setmeal setmeal = new Setmeal();
         setmealWriteConvert.mergeUpdate(dto, setmeal);
         setmeal.setId(setmealId); // !!!不要忘了mergeUpdate忽略了id
         int rows = setmealMapper.update(setmeal);
 
         if (rows != 1) {
-            throw new RuntimeException("套餐不存在或更新失败, id=" + setmealId);
+            throw new IllegalArgumentException(MessageConstant.SETMEAL_NOT_FOUND_OR_UPDATE_FAILED + ", id=" + setmealId);
         }
         // 2) 子表：先删（未传需要手动删除,所以认为不传表示清空）
         setmealDishMapper.deleteBySetmealId(setmealId);
@@ -120,7 +119,7 @@ public class SetmealServiceImpl implements SetmealService {
     public SetmealDetailVO getDetailById(Long id) {
         SetmealDetailRM setmealDetailRM = setmealMapper.getDetailById(id);
         if (setmealDetailRM == null) {
-            throw new RuntimeException("套餐不存在，id=" + id);
+            throw new IllegalArgumentException(MessageConstant.SETMEAL_NOT_FOUND + "，id=" + id);
         }
         // 查询关联菜品列表
         List<SetmealDish> dishes = setmealDishMapper.selectBySetmealId(id);

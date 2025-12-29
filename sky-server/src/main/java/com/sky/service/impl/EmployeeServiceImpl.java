@@ -135,7 +135,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         // 校验密码规范
         if (passwordEditDTO.getOldPassword() == null || passwordEditDTO.getNewPassword() == null) {
-            throw new IllegalArgumentException("oldPassword/newPassword is required");
+            throw new IllegalArgumentException(MessageConstant.OLD_NEW_PASSWORD_REQUIRED);
         }
 
         // 校验权限
@@ -156,7 +156,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         // 校验新密码
         if (passwordEditDTO.getNewPassword().equals(passwordEditDTO.getOldPassword())) {
-            throw new IllegalArgumentException("新密码不能与旧密码相同");
+            throw new IllegalArgumentException(MessageConstant.NEW_PASSWORD_SAME_AS_OLD);
         }
 
         String newHash = passwordEncoder.encode(passwordEditDTO.getNewPassword());
