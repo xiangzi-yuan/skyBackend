@@ -1671,5 +1671,119 @@ public class ShopController {
 }
 ```
 ----------------
-重构代码,明确VO/DTO职责,去耦合
+重构代码,明确VO/DTO/RM职责,去耦合
+员工,分类,套餐,菜品功能重构
 --------------------------
+开始redis部分
+下面是一段可直接贴进开发日志的记录，覆盖 **Redis 在 WSL2(Ubuntu) 中从部署到后续再次启动/验证** 的完整命令闭环。
+
+---
+
+## 开发日志：Redis（WSL2 Ubuntu）部署与后续启动
+
+### 1. 环境初始化与进入 Ubuntu（Windows 侧）
+
+* 进入 Ubuntu：
+
+```powershell
+wsl -d Ubuntu
+```
+
+* 查看已安装发行版与版本：
+
+```powershell
+wsl -l -v
+```
+
+### 2. 安装 Redis（Ubuntu 侧）
+
+```bash
+sudo apt update
+sudo apt install redis-server redis-tools
+```
+
+### 3. 启动 Redis 并设置开机自启（Ubuntu 侧）
+
+```bash
+sudo systemctl enable --now redis-server
+```
+
+### 4. 部署完成后的自检（Ubuntu 侧）
+
+```bash
+redis-cli ping
+```
+
+期望输出：
+
+```
+PONG
+```
+
+### 5. 确认监听地址与端口（Ubuntu 侧）
+
+```bash
+ss -lntp | grep 6379
+```
+
+期望看到 `127.0.0.1:6379` / `::1:6379`（仅本机回环监听）。
+
+---
+
+## 下次使用：打开 Ubuntu 并启动/检查 Redis
+
+### A. 打开 Ubuntu（Windows 侧）
+
+```powershell
+wsl -d Ubuntu
+```
+
+### B. Redis 启动/停止/重启（Ubuntu 侧）
+
+* 查看状态：
+
+```bash
+sudo systemctl status redis-server
+```
+
+* 启动：
+
+```bash
+sudo systemctl start redis-server
+```
+
+* 停止：
+
+```bash
+sudo systemctl stop redis-server
+```
+
+* 重启：
+
+```bash
+sudo systemctl restart redis-server
+```
+
+### C. 下次使用快速自检（Ubuntu 侧）
+
+```bash
+redis-cli ping
+```
+
+---
+
+## Windows 侧一键验证（不进入 Ubuntu）
+
+```powershell
+wsl -d Ubuntu -e redis-cli -h 127.0.0.1 -p 6379 ping
+```
+
+期望输出：
+
+```
+PONG
+```
+
+---
+
+备注：若已执行过 `sudo systemctl enable redis-server`，则 Redis 会随 Ubuntu 的 systemd 启动而自动运行；遇到无法自动启动时，按“启动/重启/状态检查”命令排查即可。

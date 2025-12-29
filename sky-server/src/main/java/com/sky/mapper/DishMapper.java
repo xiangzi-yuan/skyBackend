@@ -68,6 +68,8 @@ public interface DishMapper {
      */
     void softDelete(@Param("ids") List<Long> ids, @Param("deleteTime") LocalDateTime deleteTime);
 
+    Integer countByIdsAndStatus(@Param("ids") List<Long> ids, @Param("status") Integer status);
+
     @AutoFill(OperationType.UPDATE)
     void updateStatus(Dish dish);
 

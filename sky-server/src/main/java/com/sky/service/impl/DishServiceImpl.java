@@ -140,17 +140,20 @@ public class DishServiceImpl implements DishService {
             return;
         }
 
-        for (Long id : ids) {
-            DishDetailRM dishRM = dishMapper.getDetailById(id);
-            if (dishRM == null) {
-                continue;
-            }
-            if (Objects.equals(dishRM.getStatus(), StatusConstant.ENABLE)) {
-                throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
-            }
+        List<Long> idList = ids.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (idList.isEmpty()) {
+            return;
         }
 
-        List<DishSetmealRelationVO> relations = setmealDishMapper.getDishSetmealRelations(ids);
+        Integer onSaleCount = dishMapper.countByIdsAndStatus(idList, StatusConstant.ENABLE);
+        if (onSaleCount != null && onSaleCount > 0) {
+            throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
+        }
+
+        List<DishSetmealRelationVO> relations = setmealDishMapper.getDishSetmealRelations(idList);
         if (relations != null && !relations.isEmpty()) {
 
             // 按菜品ID分组（避免同名菜品被错误合并）
@@ -190,7 +193,7 @@ public class DishServiceImpl implements DishService {
 
         // 软删除：标记 is_deleted = 1，保留数据用于历史订单查询
         // 注意：口味数据不删除，因为订单详情可能需要展示
-        dishMapper.softDelete(ids, LocalDateTime.now());
+        dishMapper.softDelete(idList, LocalDateTime.now());
     }
 
     @Override

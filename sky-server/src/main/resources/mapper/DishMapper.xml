@@ -77,4 +77,22 @@
         where id = #{id}
     </update>
 
+    <select id="countByIdsAndStatus" resultType="int">
+        select count(1)
+        from dish
+        <where>
+            is_deleted = 0
+            and status = #{status}
+            <if test="ids != null and ids.size() > 0">
+                and id in
+                <foreach collection="ids" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="ids == null or ids.size() == 0">
+                and 1 = 0
+            </if>
+        </where>
+    </select>
+
 </mapper>

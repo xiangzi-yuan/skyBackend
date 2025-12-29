@@ -25,6 +25,7 @@
         <java.version>17</java.version>
 
         <mybatis.spring>2.2.0</mybatis.spring>
+        <mybatis.version>3.5.19</mybatis.version>
         <fastjson>1.2.76</fastjson>
         <commons.lang>2.6</commons.lang>
         <druid>1.2.1</druid>
@@ -46,6 +47,11 @@
         <dependencies>
 
             <!-- mybatis -->
+            <dependency>
+                <groupId>org.mybatis</groupId>
+                <artifactId>mybatis</artifactId>
+                <version>${mybatis.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.mybatis.spring.boot</groupId>
                 <artifactId>mybatis-spring-boot-starter</artifactId>

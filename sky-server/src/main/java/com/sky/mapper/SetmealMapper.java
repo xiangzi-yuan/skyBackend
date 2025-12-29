@@ -61,4 +61,6 @@ public interface SetmealMapper {
      * 软删除套餐（批量）
      */
     void softDelete(@Param("ids") List<Long> ids, @Param("deleteTime") LocalDateTime deleteTime);
+
+    Integer countByIdsAndStatus(@Param("ids") List<Long> ids, @Param("status") Integer status);
 }

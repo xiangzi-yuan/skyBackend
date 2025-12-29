@@ -152,19 +152,23 @@ public class SetmealServiceImpl implements SetmealService {
         }
 
         // 1. 校验：起售中的套餐不能删除
-        for (Long id : ids) {
-            SetmealDetailRM setmealRM = setmealMapper.getDetailById(id);
-            if (setmealRM == null) {
-                continue;
-            }
-            if (Objects.equals(setmealRM.getStatus(), StatusConstant.ENABLE)) {
-                throw new DeletionNotAllowedException(MessageConstant.SETMEAL_ON_SALE);
-            }
+        List<Long> idList = ids.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (idList.isEmpty()) {
+            return;
+        }
+
+        // 去数据库里统计——在要删除的这批 id 里，有多少条套餐的 status = ENABLE
+        Integer onSaleCount = setmealMapper.countByIdsAndStatus(idList, StatusConstant.ENABLE);
+        if (onSaleCount != null && onSaleCount > 0) {
+            throw new DeletionNotAllowedException(MessageConstant.SETMEAL_ON_SALE);
         }
 
         // 2. 软删除：标记 is_deleted = 1，保留数据用于历史订单查询
         // 注意：setmeal_dish 关联表数据不删除，因为订单详情可能需要展示套餐内容
-        setmealMapper.softDelete(ids, LocalDateTime.now());
+        setmealMapper.softDelete(idList, LocalDateTime.now());
     }
 
     @Override
