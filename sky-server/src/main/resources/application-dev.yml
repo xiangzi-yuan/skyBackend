@@ -10,6 +10,12 @@ sky:
     database: sky_take_out
     username: ${DB_USERNAME:}
     password: ${DB_PASSWORD:}
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    timeout: 2000ms
+    database: 0
+
 security:
   password:
     bcrypt-cost: 12

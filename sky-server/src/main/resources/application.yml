@@ -13,9 +13,10 @@ spring:
       username: ${sky.datasource.username}
       password: ${sky.datasource.password}
   redis:
-    host: 127.0.0.1
-    port: 6379
-    timeout: 2000ms
+    host: ${sky.redis.host}
+    port: ${sky.redis.port}
+    timeout: ${sky.redis.timeout}
+    database: ${sky.redis.database}
 
 
 mybatis:
