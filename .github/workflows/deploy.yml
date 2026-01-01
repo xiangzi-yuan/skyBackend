@@ -13,15 +13,16 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    container:
-      image: maven:3.9.6-eclipse-temurin-17
-    env:
-      JAVA_TOOL_OPTIONS: -Djdk.image.use.jvm.map=false
-      MAVEN_OPTS: -Djdk.image.use.jvm.map=false
     
     steps:
       - name: 拉取代码
         uses: actions/checkout@v4
+
+      - name: 设置 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - name: Maven 构建
         run: mvn clean package -DskipTests -B
