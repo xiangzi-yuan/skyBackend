@@ -14,20 +14,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     container:
-      image: maven:3.8.6-eclipse-temurin-17
+      image: maven:3.9.6-eclipse-temurin-17
     env:
-      JAVA_HOME: /opt/java/openjdk
-      PATH: /opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      JAVA_TOOL_OPTIONS: -Djdk.image.use.jvm.map=false
+      MAVEN_OPTS: -Djdk.image.use.jvm.map=false
     
     steps:
       - name: 拉取代码
         uses: actions/checkout@v4
-
-      - name: 打印Java/Maven信息
-        run: |
-          echo "JAVA_HOME=$JAVA_HOME"
-          java -version
-          mvn -version
 
       - name: Maven 构建
         run: mvn clean package -DskipTests -B
@@ -38,9 +32,8 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "sky-server/target/sky-server-1.0-SNAPSHOT.jar"
+          source: "sky-server/target/*.jar"
           target: "/opt/sky/backend"
-          strip_components: 2
 
       - name: 重启后端服务
         uses: appleboy/ssh-action@v1.0.3
