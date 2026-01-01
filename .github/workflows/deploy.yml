@@ -6,57 +6,58 @@ name: Deploy Backend
 on:
   push:
     branches: [master]
-
-  # 手动触发（GitHub 页面点击按钮）
   workflow_dispatch:
+
+concurrency:
+  group: deploy-backend-master
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: 拉取代码
-        uses: actions/checkout@v4
-
-      - name: 清理服务器旧代码
+      - name: 服务器拉取代码 + 构建并启动
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            # 清理旧的代码目录（保留 docker 相关配置）
-            rm -rf /opt/sky/skyBackend
-            mkdir -p /opt/sky/skyBackend
-
-      - name: 上传代码到服务器
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "."
-          target: "/opt/sky/skyBackend"
-          overwrite: true
-
-      - name: 重新构建并启动
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 100m
+          command_timeout: 120m
           script: |
             set -euo pipefail
-            cd /opt/sky
-            
+
+            APP_DIR="/opt/sky/skyBackend"
+            COMPOSE_DIR="/opt/sky"
+
+            # 1) 确保代码仓库已在服务器初始化（只要第一次做一次）
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "❌ $APP_DIR 不是 git 仓库。请按我下面的【服务器配合】初始化一次。"
+              exit 1
+            fi
+
+            # 2) 更新到 master 最新（会自动清理掉被删除/改名的旧文件）
+            cd "$APP_DIR"
+            git fetch --prune origin
+            git reset --hard origin/master
+            git clean -fd
+
+            # 3) 确保 buildx builder 存在（没有就创建一次）
+            if ! docker buildx inspect skybuilder >/dev/null 2>&1; then
+              docker buildx create --name skybuilder --driver docker-container --use
+            else
+              docker buildx use skybuilder
+            fi
+            docker buildx inspect --bootstrap >/dev/null
+
+            # 4) 构建 + 更新容器
+            cd "$COMPOSE_DIR"
             export DOCKER_BUILDKIT=1
             export COMPOSE_DOCKER_CLI_BUILD=1
-            
-            # 构建（失败直接退出，不清缓存）
+            export BUILDX_BUILDER=skybuilder
+
             docker compose build backend
-            
-            # 启动/更新
             docker compose up -d backend
-            
+
+            docker compose ps
             echo "✅ 后端部署完成！"
