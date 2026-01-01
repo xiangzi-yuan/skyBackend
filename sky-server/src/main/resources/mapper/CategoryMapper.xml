@@ -45,9 +45,10 @@
         WHERE id = #{id}
     </update>
 
-    <!-- 根据类型查询分类列表（用于下拉选择） -->
+
     <select id="list" resultType="Category">
-        SELECT * FROM category
+        SELECT id, name, type, sort, status
+        FROM category
         WHERE status = 1 AND is_deleted = 0
         <if test="type != null">
             AND type = #{type}

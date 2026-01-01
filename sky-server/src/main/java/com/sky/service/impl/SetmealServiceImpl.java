@@ -14,13 +14,17 @@ import com.sky.entity.SetmealDish;
 import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.SetmealDishMapper;
 import com.sky.mapper.SetmealMapper;
+import com.sky.readmodel.dish.DishItemRM;
 import com.sky.readmodel.setmeal.SetmealDetailRM;
 import com.sky.readmodel.setmeal.SetmealPageRM;
 import com.sky.result.PageResult;
 import com.sky.service.SetmealService;
+import com.sky.vo.dish.DishItemVO;
 import com.sky.vo.setmeal.SetmealDetailVO;
 import com.sky.vo.setmeal.SetmealDishVO;
+import com.sky.vo.setmeal.SetmealListVO;
 import com.sky.vo.setmeal.SetmealPageVO;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -177,6 +181,26 @@ public class SetmealServiceImpl implements SetmealService {
         setmeal.setStatus(status);
         setmealMapper.updateStatus(setmeal);
 
+    }
+
+    @Override
+    public List<SetmealListVO> listOnSaleByCategoryId(Long categoryId) {
+        return setmealReadConvert.toListVOList(
+                setmealMapper.listByCategoryId(categoryId, StatusConstant.ENABLE)
+        );
+    }
+
+    @Override
+    public List<DishItemVO> getDishItemsBySetmealId(Long setmealId) {
+        List<DishItemRM> rmList = setmealDishMapper.listDishItemsBySetmealId(setmealId);
+        // RM 与 VO 结构相同，直接使用 BeanUtils 转换，无需额外 Converter
+        return rmList.stream()
+                .map(rm -> {
+                    DishItemVO vo = new DishItemVO();
+                    BeanUtils.copyProperties(rm, vo);
+                    return vo;
+                })
+                .collect(Collectors.toList());
     }
 
 }

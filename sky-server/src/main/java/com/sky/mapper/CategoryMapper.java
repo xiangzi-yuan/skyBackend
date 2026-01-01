@@ -7,11 +7,7 @@ import com.sky.entity.Category;
 import com.sky.enumeration.OperationType;
 import com.sky.readmodel.category.CategoryDetailRM;
 import com.sky.readmodel.category.CategoryPageRM;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -71,8 +67,8 @@ public interface CategoryMapper {
 
     /**
      * 根据类型查询分类（用于下拉选择）
-     * @param type 分类类型
+     * @param type 分类类型（1-菜品分类，2-套餐分类，null-全部）
      * @return 分类列表
      */
-    List<Category> list(Integer type);
+    List<Category> list(@Param("type") Integer type);
 }

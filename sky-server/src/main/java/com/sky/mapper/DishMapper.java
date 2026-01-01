@@ -45,11 +45,12 @@ public interface DishMapper {
     )
     DishDetailRM getDetailById(Long id);
 
-    @Select("""
-            select * from dish where category_id = #{categoryId} and is_deleted = 0
-            """
-    )
-    List<DishDetailRM> getByCategoryId(Long categoryId);
+    /**
+     * 根据分类ID查询菜品列表
+     * @param categoryId 分类ID
+     * @param status 状态（可选，null 表示查询所有状态）
+     */
+    List<DishDetailRM> getByCategoryId(@Param("categoryId") Long categoryId, @Param("status") Integer status, @Param("typeId") Integer typeId);
 
     /************************************************* 写 ***********************************/
 

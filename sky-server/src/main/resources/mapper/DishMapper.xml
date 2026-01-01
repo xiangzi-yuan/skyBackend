@@ -95,4 +95,25 @@
         </where>
     </select>
 
+    <!-- 根据分类ID查询菜品列表，支持可选的状态过滤（内部方法使用） -->
+    <select id="getByCategoryId" resultType="com.sky.readmodel.dish.DishDetailRM">
+        select d.id,
+               d.name,
+               d.category_id,
+               c.name as category_name,
+               d.price,
+               d.image,
+               d.description,
+               d.status
+        from dish d
+        left join category c on d.category_id = c.id
+        <where>
+            d.is_deleted = 0
+            and d.category_id = #{categoryId}
+            <if test="status != null">
+                and d.status = #{status}
+            </if>
+        </where>
+    </select>
+
 </mapper>

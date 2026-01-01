@@ -9,10 +9,10 @@ import com.sky.readmodel.employee.EmployeeAuthInfo;
 import com.sky.readmodel.employee.EmployeeDetailRM;
 import com.sky.readmodel.employee.EmployeeLoginRM;
 import com.sky.readmodel.employee.EmployeePageRM;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import com.sky.readmodel.employee.EmployeeRoleRM;
+import org.apache.ibatis.annotations.*;
+
+import java.time.LocalDateTime;
 
 @Mapper
 public interface EmployeeMapper {
@@ -44,6 +44,18 @@ public interface EmployeeMapper {
             "from employee " +
             "where id = #{id}")
     EmployeeAuthInfo getAuthInfoById(Long id);
+
+    /**
+     * 查询员工权限信息（用于权限提升功能）
+     */
+    @Select("select id, name, username, role from employee where id = #{id}")
+    EmployeeRoleRM getRoleInfoById(Long id);
+
+    /**
+     * 更新员工权限等级
+     */
+    @Update("update employee set role = #{role}, update_time = #{updateTime}, update_user = #{updateUser} where id = #{id}")
+    void updateRole(@Param("id") Long id, @Param("role") Integer role, @Param("updateTime") LocalDateTime updateTime, @Param("updateUser") Long updateUser);
 
     /**
      * 分页查询：返回 RM（SQL 在 XML）

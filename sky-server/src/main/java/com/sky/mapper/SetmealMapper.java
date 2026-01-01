@@ -6,6 +6,7 @@ import com.sky.dto.setmeal.SetmealPageQueryDTO;
 import com.sky.entity.Setmeal;
 import com.sky.enumeration.OperationType;
 import com.sky.readmodel.setmeal.SetmealDetailRM;
+import com.sky.readmodel.setmeal.SetmealListRM;
 import com.sky.readmodel.setmeal.SetmealPageRM;
 import org.apache.ibatis.annotations.*;
 
@@ -65,4 +66,9 @@ public interface SetmealMapper {
     void softDelete(@Param("ids") List<Long> ids, @Param("deleteTime") LocalDateTime deleteTime);
 
     Integer countByIdsAndStatus(@Param("ids") List<Long> ids, @Param("status") Integer status);
+
+    /**
+     * 根据分类ID查询套餐列表（可选按状态过滤，User端专用）
+     */
+    List<SetmealListRM> listByCategoryId(@Param("categoryId") Long categoryId, @Param("status") Integer status);
 }

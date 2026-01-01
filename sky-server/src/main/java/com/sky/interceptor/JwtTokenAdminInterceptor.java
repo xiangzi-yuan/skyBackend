@@ -37,20 +37,20 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
 
-        // 非 Controller 方法（静态资源等）直接放行
+        // 非Controller方法（静态资源等）直接放行
         if (!(handler instanceof HandlerMethod)) {
             return true;
         }
 
-        // 1) 从请求头取 token（header 名由配置 sky.jwt.adminTokenName 决定）
+        // 1) 从请求头取token（header名由配置 sky.jwt.adminTokenName 决定）
         String token = request.getHeader(jwtProperties.getAdminTokenName());
         if (token == null || token.isBlank()) {
-            response.setStatus(401);
+            writeJson401(response, MessageConstant.NOT_LOGIN);
             return false;
         }
 
         try {
-            // 2) 解析 JWT
+            // 2) 解析JWT
             Claims claims = JwtUtil.parseJWT(jwtProperties.getAdminSecretKey(), token);
 
             Long empId = Long.valueOf(String.valueOf(claims.get(JwtClaimsConstant.EMP_ID)));
@@ -72,10 +72,10 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
             }
 
             // 4) 基于数据库最新状态做鉴权信息校验：禁用 / 是否改密
-            //    目的：解决“禁用账号仍能带旧 token 访问”的问题
+            //    目的：解决"禁用账号仍能带旧token访问"的问题
             EmployeeAuthInfo auth = employeeMapper.getAuthInfoById(empId);
             if (auth == null) {
-                response.setStatus(401);
+                writeJson401(response, MessageConstant.ACCOUNT_NOT_FOUND);
                 return false;
             }
 
@@ -92,8 +92,9 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
             }
 
             // 5) RBAC：三级权限
-            if (!checkPermission(role, uri, method)) {
-                writeJson403(response, MessageConstant.NO_PERMISSION);
+            String permissionError = checkPermission(role, uri, method);
+            if (permissionError != null) {
+                writeJson403(response, permissionError);
                 return false;
             }
 
@@ -101,13 +102,13 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
 
         } catch (Exception ex) {
             log.warn("jwt校验失败：{}", ex.getMessage());
-            response.setStatus(401);
+            writeJson401(response, MessageConstant.NOT_LOGIN);
             return false;
         }
     }
 
     /**
-     * 白名单：只要已登录即可访问（并且允许未改密访问）
+     * 白名单：只需已登录即可访问（并且允许未改密访问）
      */
     private boolean isLoginOnlyWhitelist(String uri, String method) {
         return ("/admin/employee/logout".equals(uri) && "POST".equalsIgnoreCase(method))
@@ -116,44 +117,81 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
 
     /**
      * 三级权限校验
+     * @return null 表示有权限；非null 返回具体错误信息
      */
-    private boolean checkPermission(RoleLevel role, String uri, String method) {
+    private String checkPermission(RoleLevel role, String uri, String method) {
 
         // SUPER：全放行
         if (role == RoleLevel.SUPER) {
-            return true;
+            return null;
         }
 
-        // MANAGER：允许员工管理“只读”(GET)，禁止写
+        // MANAGER：可读写除员工外的所有接口
         if (role == RoleLevel.MANAGER) {
-
-            // 员工管理模块：只允许 GET（分页、按id查询），其余拒绝
+            // 员工管理模块：只允许GET（分页、按id查询），禁止写操作
             if (uri.startsWith("/admin/employee")) {
-                return "GET".equalsIgnoreCase(method);
+                if ("GET".equalsIgnoreCase(method)) {
+                    return null;
+                }
+                return MessageConstant.NO_PERMISSION_MANAGER_WRITE;
+            }
+            // 其它模块全放行（订单、分类、菜品、套餐等可读可写）
+            return null;
+        }
+
+        // STAFF：可读订单/分类/菜品/套餐，但不能修改；完全禁止员工管理
+        if (role == RoleLevel.STAFF) {
+            // 员工管理模块：完全禁止
+            if (uri.startsWith("/admin/employee")) {
+                return "GET".equalsIgnoreCase(method) 
+                    ? MessageConstant.NO_PERMISSION_STAFF_READ 
+                    : MessageConstant.NO_PERMISSION_STAFF_WRITE;
             }
 
-            // 其它模块先全放行（你后面再细分）
-            return true;
-        }
+            // 分类管理：只读
+            if (uri.startsWith("/admin/category")) {
+                return "GET".equalsIgnoreCase(method) 
+                    ? null 
+                    : MessageConstant.NO_PERMISSION_STAFF_WRITE;
+            }
 
-        // STAFF：只允许自用 + 低风险只读
-        if (role == RoleLevel.STAFF) {
-            // 分类下拉
-            if ("/admin/category/list".equals(uri) && "GET".equalsIgnoreCase(method)) return true;
+            // 菜品管理：只读
+            if (uri.startsWith("/admin/dish")) {
+                return "GET".equalsIgnoreCase(method) 
+                    ? null 
+                    : MessageConstant.NO_PERMISSION_STAFF_WRITE;
+            }
 
-            // 菜品/套餐只读
-            if (uri.startsWith("/admin/dish") && "GET".equalsIgnoreCase(method)) return true;
-            if (uri.startsWith("/admin/setmeal") && "GET".equalsIgnoreCase(method)) return true;
+            // 套餐管理：只读
+            if (uri.startsWith("/admin/setmeal")) {
+                return "GET".equalsIgnoreCase(method) 
+                    ? null 
+                    : MessageConstant.NO_PERMISSION_STAFF_WRITE;
+            }
 
-            // 订单只读
-            if (uri.startsWith("/admin/order") && "GET".equalsIgnoreCase(method)) return true;
+            // 订单管理：只读
+            if (uri.startsWith("/admin/order")) {
+                return "GET".equalsIgnoreCase(method) 
+                    ? null 
+                    : MessageConstant.NO_PERMISSION_STAFF_WRITE;
+            }
 
-            // 其它一律拒绝
-            return false;
+            // 其它模块一律拒绝
+            return "GET".equalsIgnoreCase(method) 
+                ? MessageConstant.NO_PERMISSION_STAFF_READ 
+                : MessageConstant.NO_PERMISSION_STAFF_WRITE;
         }
 
         // 兜底：未知角色默认拒绝
-        return false;
+        return MessageConstant.NO_PERMISSION_UNKNOWN_ROLE;
+    }
+
+    private void writeJson401(HttpServletResponse response, String msg) throws Exception {
+        response.setStatus(401);
+        response.setContentType("application/json;charset=UTF-8");
+        Result<Object> r = Result.error(msg);
+        response.getWriter().write(objectMapper.writeValueAsString(r));
+        response.getWriter().flush();
     }
 
     private void writeJson403(HttpServletResponse response, String msg) throws Exception {

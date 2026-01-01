@@ -15,6 +15,20 @@ public enum RoleLevel {
         return level;
     }
 
+    public int getValue() {
+        return level;
+    }
+
+    public static RoleLevel fromValue(Integer value) {
+        if (value == null) return null;
+        for (RoleLevel role : values()) {
+            if (role.level == value) {
+                return role;
+            }
+        }
+        return null;
+    }
+
     public static RoleLevel from(Object v) {
         if (v == null) return STAFF;
         String s = String.valueOf(v);

@@ -1,10 +1,10 @@
 package com.sky.dto.employee;
 
+import com.sky.constant.ValidationMessageConstant;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import com.sky.constant.ValidationMessageConstant;
 import javax.validation.constraints.NotBlank;
 import java.io.Serializable;
 

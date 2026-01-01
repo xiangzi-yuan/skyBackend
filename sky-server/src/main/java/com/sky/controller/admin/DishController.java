@@ -20,7 +20,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
-@RestController
+@RestController("adminDishController")
 @RequestMapping("/admin/dish")
 @Slf4j
 @Validated
@@ -56,7 +56,7 @@ public class DishController {
     @ApiOperation("根据分类查询菜品")
     public Result<List<DishDetailVO>>  getByCategoryId(@RequestParam Long categoryId){
         log.info("根据分类id:{}查询菜品", categoryId);
-        List<DishDetailVO> dishDetailVOList = dishService.getByCategoryId(categoryId);
+        List<DishDetailVO> dishDetailVOList = dishService.listAllByCategoryId(categoryId);
         return Result.success(dishDetailVOList);
     }
     /**

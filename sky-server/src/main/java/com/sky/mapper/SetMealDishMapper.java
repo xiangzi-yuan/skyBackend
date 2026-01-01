@@ -1,6 +1,8 @@
 package com.sky.mapper;
 
 import com.sky.entity.SetmealDish;
+import com.sky.readmodel.dish.DishItemRM;
+import com.sky.readmodel.dish.DishSetmealRelationRM;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -26,7 +28,7 @@ public interface SetmealDishMapper {
     /**
      * 根据菜品ID列表查询菜品与套餐的关联关系（用于删除时的详细错误提示）
      */
-    List<com.sky.vo.dish.DishSetmealRelationVO> getDishSetmealRelations(@Param("dishIds") List<Long> dishIds);
+    List<DishSetmealRelationRM> getDishSetmealRelations(@Param("dishIds") List<Long> dishIds);
 
     void insertBatch(@Param("setmealDishes") List<SetmealDish> setmealDishes);
 
@@ -50,4 +52,9 @@ public interface SetmealDishMapper {
                         where setmeal_id = #{setmealId}
                         """)
         List<SetmealDish> selectBySetmealId(Long setmealId);
+
+    /**
+     * User端：根据套餐ID查询包含的菜品（含份数）
+     */
+    List<DishItemRM> listDishItemsBySetmealId(@Param("setmealId") Long setmealId);
 }

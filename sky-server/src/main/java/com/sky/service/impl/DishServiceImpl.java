@@ -2,6 +2,7 @@ package com.sky.service.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.sky.constant.CategoryConstant;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.converter.DishReadConvert;
@@ -17,12 +18,12 @@ import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealDishMapper;
 import com.sky.readmodel.dish.DishDetailRM;
 import com.sky.readmodel.dish.DishPageRM;
+import com.sky.readmodel.dish.DishSetmealRelationRM;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
 import com.sky.vo.dish.DishDetailVO;
 import com.sky.vo.dish.DishFlavorVO;
 import com.sky.vo.dish.DishPageVO;
-import com.sky.vo.dish.DishSetmealRelationVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,13 +115,25 @@ public class DishServiceImpl implements DishService {
     }
 
     @Override
-    public List<DishDetailVO> getByCategoryId(Long categoryId) {
+    public List<DishDetailVO> listOnSaleByCategoryId(Long categoryId) {
+        return listByCategoryIdInternal(categoryId, StatusConstant.ENABLE);
+    }
 
-        List<DishDetailRM> dishDetailRMList = dishMapper.getByCategoryId(categoryId);
-        List<DishDetailVO> voList = dishDetailRMList.stream()
+    @Override
+    public List<DishDetailVO> listAllByCategoryId(Long categoryId) {
+        return listByCategoryIdInternal(categoryId, null);
+    }
+
+    /**
+     * 内部复用方法：根据分类ID查询菜品列表
+     * @param categoryId 分类ID
+     * @param status 状态（null 表示不过滤）
+     */
+    private List<DishDetailVO> listByCategoryIdInternal(Long categoryId, Integer status) {
+        List<DishDetailRM> dishDetailRMList = dishMapper.getByCategoryId(categoryId, status, CategoryConstant.DISH);
+        return dishDetailRMList.stream()
                 .map(dishReadConvert::toDetailVO)
                 .toList();
-        return voList;
     }
 
     /**
@@ -153,13 +166,13 @@ public class DishServiceImpl implements DishService {
             throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
         }
 
-        List<DishSetmealRelationVO> relations = setmealDishMapper.getDishSetmealRelations(idList);
+        List<DishSetmealRelationRM> relations = setmealDishMapper.getDishSetmealRelations(idList);
         if (relations != null && !relations.isEmpty()) {
 
             // 按菜品ID分组（避免同名菜品被错误合并）
-            Map<Long, List<DishSetmealRelationVO>> groupedByDishId = relations.stream()
+            Map<Long, List<DishSetmealRelationRM>> groupedByDishId = relations.stream()
                     .filter(r -> r.getDishId() != null) // 防御：避免 key 为 null
-                    .collect(Collectors.groupingBy(DishSetmealRelationVO::getDishId));
+                    .collect(Collectors.groupingBy(DishSetmealRelationRM::getDishId));
 
             StringBuilder sb = new StringBuilder(MessageConstant.DISH_BE_RELATED_BY_SETMEAL_DETAIL);
 
@@ -168,18 +181,18 @@ public class DishServiceImpl implements DishService {
                     .sorted(Map.Entry.comparingByKey()) // 按 dishId 排序
                     .forEachOrdered(entry -> {
                         Long dishId = entry.getKey();
-                        List<DishSetmealRelationVO> relList = entry.getValue();
+                        List<DishSetmealRelationRM> relList = entry.getValue();
 
                         // 展示用菜品名：取本组第一个非空名称
                         String dishName = relList.stream()
-                                .map(DishSetmealRelationVO::getDishName)
+                                .map(DishSetmealRelationRM::getDishName)
                                 .filter(Objects::nonNull)
                                 .findFirst()
                                 .orElse("未知菜品(" + dishId + ")");
 
                         // 套餐名：去重 + 连接
                         String setmealNames = relList.stream()
-                                .map(DishSetmealRelationVO::getSetmealName)
+                                .map(DishSetmealRelationRM::getSetmealName)
                                 .filter(Objects::nonNull)
                                 .distinct()
                                 .collect(Collectors.joining("、"));

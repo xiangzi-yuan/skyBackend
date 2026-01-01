@@ -2,6 +2,7 @@ package com.sky.service.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.sky.constant.CategoryConstant;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.converter.CategoryReadConvert;
@@ -139,7 +140,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     /**
      * 根据类型查询分类列表（用于下拉选择）
-     * @param type 分类类型
+     * @param type 分类类型（1-菜品分类，2-套餐分类，null-全部）
      * @return 分类简略信息列表
      */
     @Override

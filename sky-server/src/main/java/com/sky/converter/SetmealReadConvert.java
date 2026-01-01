@@ -2,9 +2,11 @@ package com.sky.converter;
 
 import com.sky.entity.SetmealDish;
 import com.sky.readmodel.setmeal.SetmealDetailRM;
+import com.sky.readmodel.setmeal.SetmealListRM;
 import com.sky.readmodel.setmeal.SetmealPageRM;
 import com.sky.vo.setmeal.SetmealDetailVO;
 import com.sky.vo.setmeal.SetmealDishVO;
+import com.sky.vo.setmeal.SetmealListVO;
 import com.sky.vo.setmeal.SetmealPageVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
@@ -23,4 +25,8 @@ public interface SetmealReadConvert {
     List<SetmealDishVO> toDishVOList(List<SetmealDish> dishes);
 
     SetmealPageVO toPageVO(SetmealPageRM setmealPageRM);
+
+    SetmealListVO toListVO(SetmealListRM setmealListRM);
+
+    List<SetmealListVO> toListVOList(List<SetmealListRM> setmealListRMList);
 }

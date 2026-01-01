@@ -1,9 +1,9 @@
 package com.sky.controller.admin;
 
 import com.sky.constant.MessageConstant;
+import com.sky.dto.setmeal.SetmealCreateDTO;
 import com.sky.dto.setmeal.SetmealPageQueryDTO;
 import com.sky.dto.setmeal.SetmealUpdateDTO;
-import com.sky.dto.setmeal.SetmealCreateDTO;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.SetmealService;
@@ -20,7 +20,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
-@RestController
+@RestController("adminSetmealController")
 @RequestMapping("/admin/setmeal")
 @Slf4j
 @Validated

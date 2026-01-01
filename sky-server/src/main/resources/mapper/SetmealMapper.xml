@@ -82,4 +82,23 @@
     </select>
 
 
+
+    <select id="listByCategoryId" resultType="com.sky.readmodel.setmeal.SetmealListRM">
+        select
+            id,
+            name,
+            price,
+            description,
+            image
+        from setmeal
+        <where>
+            is_deleted = 0
+            and category_id = #{categoryId}
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+        order by update_time desc, id desc
+    </select>
+
 </mapper>

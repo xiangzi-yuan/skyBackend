@@ -1,16 +1,19 @@
 package com.sky.controller.admin;
 
 import com.sky.constant.MessageConstant;
-import com.sky.dto.*;
+import com.sky.dto.PasswordEditDTO;
 import com.sky.dto.employee.EmployeeCreateDTO;
 import com.sky.dto.employee.EmployeeLoginDTO;
 import com.sky.dto.employee.EmployeePageQueryDTO;
+import com.sky.dto.employee.EmployeeRoleUpgradeDTO;
 import com.sky.dto.employee.EmployeeUpdateDTO;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.EmployeeService;
 import com.sky.vo.employee.EmployeeDetailVO;
 import com.sky.vo.employee.EmployeeLoginVO;
+import com.sky.vo.employee.EmployeeRoleVO;
+import com.sky.vo.employee.RoleLevelOptionVO;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +24,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @RestController
 @RequestMapping("/admin/employee")
@@ -87,5 +91,25 @@ public class EmployeeController {
     ) {
         employeeService.updateStatus(id, status);
         return Result.success();
+    }
+
+    @PostMapping("/upgradeRole")
+    @ApiOperation("提升员工权限（仅SUPER可用）")
+    public Result<String> upgradeRole(@Valid @RequestBody EmployeeRoleUpgradeDTO dto) {
+        log.info("提升员工权限：employeeId={}, newRole={}", dto.getEmployeeId(), dto.getNewRole());
+        employeeService.upgradeRole(dto);
+        return Result.success();
+    }
+
+    @GetMapping("/role/{employeeId}")
+    @ApiOperation("获取员工权限信息")
+    public Result<EmployeeRoleVO> getRoleInfo(@PathVariable Long employeeId) {
+        return Result.success(employeeService.getRoleInfo(employeeId));
+    }
+
+    @GetMapping("/roleLevels")
+    @ApiOperation("获取所有权限等级选项")
+    public Result<List<RoleLevelOptionVO>> getRoleLevelOptions() {
+        return Result.success(employeeService.getRoleLevelOptions());
     }
 }

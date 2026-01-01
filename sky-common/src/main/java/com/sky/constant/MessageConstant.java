@@ -12,6 +12,7 @@ public class MessageConstant {
     public static final String ACCOUNT_NOT_FOUND = "账号不存在";
     public static final String ACCOUNT_LOCKED = "账号被锁定";
     public static final String UNKNOWN_ERROR = "未知错误";
+    public static final String NOT_LOGIN = "未登录";
     public static final String USER_NOT_LOGIN = "用户未登录";
     public static final String CATEGORY_BE_RELATED_BY_SETMEAL = "当前分类关联了套餐,不能删除";
     public static final String CATEGORY_BE_RELATED_BY_DISH = "当前分类关联了菜品,不能删除";
@@ -28,6 +29,12 @@ public class MessageConstant {
     public static final String ORDER_STATUS_ERROR = "订单状态错误";
     public static final String ORDER_NOT_FOUND = "订单不存在";
     public static final String NO_PERMISSION = "无权限";
+    public static final String NO_PERMISSION_EMPLOYEE_READ = "当前角色无权查看员工信息";
+    public static final String NO_PERMISSION_EMPLOYEE_WRITE = "当前角色无权修改员工信息";
+    public static final String NO_PERMISSION_STAFF_READ = "普通员工无权查看该资源";
+    public static final String NO_PERMISSION_STAFF_WRITE = "普通员工无权修改该资源";
+    public static final String NO_PERMISSION_MANAGER_WRITE = "经理无权修改员工信息";
+    public static final String NO_PERMISSION_UNKNOWN_ROLE = "未知角色，拒绝访问";
 
     // ===== 通用校验/参数错误 =====
     public static final String PARAM_VALID_FAILED = "参数校验失败";

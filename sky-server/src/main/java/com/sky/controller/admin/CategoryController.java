@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * 分类管理
  */
-@RestController
+@RestController("adminCategoryController")
 @RequestMapping("/admin/category")
 @Api(tags = "分类相关接口")
 @Slf4j
@@ -31,6 +31,7 @@ public class CategoryController {
 
     /**
      * 新增分类
+     *
      * @param dto 新增分类DTO
      * @return 操作结果
      */
@@ -44,6 +45,7 @@ public class CategoryController {
 
     /**
      * 分类分页查询
+     *
      * @param dto 分页查询条件
      * @return 分页结果
      */
@@ -57,6 +59,7 @@ public class CategoryController {
 
     /**
      * 根据ID查询分类详情（用于编辑回显）
+     *
      * @param id 分类ID
      * @return 分类详情
      */
@@ -70,6 +73,7 @@ public class CategoryController {
 
     /**
      * 删除分类
+     *
      * @param id 分类ID
      * @return 操作结果
      */
@@ -83,6 +87,7 @@ public class CategoryController {
 
     /**
      * 修改分类
+     *
      * @param dto 修改分类DTO
      * @return 操作结果
      */
@@ -96,8 +101,9 @@ public class CategoryController {
 
     /**
      * 启用/禁用分类
+     *
      * @param status 状态值
-     * @param id 分类ID
+     * @param id     分类ID
      * @return 操作结果
      */
     @PostMapping("/status/{status}")
@@ -109,13 +115,18 @@ public class CategoryController {
     }
 
     /**
-     * 根据类型查询分类列表（用于下拉选择）
-     * @param type 分类类型
+     * 菜品管理 → 新增/编辑菜品：下拉框只需要菜品分类
+     * 调：/admin/category/list?type=1
+     * <p>
+     * 套餐管理 → 新增/编辑套餐：下拉框只需要套餐分类
+     * 调：/admin/category/list?type=2
+     *
+     * @param type 分类类型（1-菜品分类，2-套餐分类，不传则查全部）
      * @return 分类列表
      */
     @GetMapping("/list")
     @ApiOperation("根据类型查询分类")
-    public Result<List<CategorySimpleVO>> list(Integer type) {
+    public Result<List<CategorySimpleVO>> list(@RequestParam Integer type) {
         log.info("根据类型查询分类：type={}", type);
         List<CategorySimpleVO> list = categoryService.list(type);
         return Result.success(list);

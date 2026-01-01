@@ -31,4 +31,7 @@ public class EmployeeLoginVO implements Serializable {
     @ApiModelProperty("初始密码修改状态")
     private Boolean needChangePassword;
 
+    @ApiModelProperty("权限等级：1-普通员工 5-经理 9-超级管理员")
+    private Integer role;
+
 }

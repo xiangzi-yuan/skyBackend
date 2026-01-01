@@ -36,7 +36,7 @@
         </where>
     </select>
 
-    <select id="getDishSetmealRelations" resultType="com.sky.vo.dish.DishSetmealRelationVO">
+    <select id="getDishSetmealRelations" resultType="com.sky.readmodel.dish.DishSetmealRelationRM">
         select d.id as dishId, d.name as dishName, s.name as setmealName
         from setmeal_dish sd
         inner join setmeal s on sd.setmeal_id = s.id and s.is_deleted = 0
@@ -63,5 +63,22 @@
         </foreach>
     </insert>
 
+
+
+    <select id="listDishItemsBySetmealId" resultType="com.sky.readmodel.dish.DishItemRM">
+        select
+            d.name        as name,
+            sd.copies     as copies,
+            d.image       as image,
+            d.description as description
+        from setmeal_dish sd
+        inner join dish d on sd.dish_id = d.id
+        <where>
+            sd.setmeal_id = #{setmealId}
+            and d.is_deleted = 0
+            and d.status = 1
+        </where>
+        order by sd.id asc
+    </select>
 
 </mapper>

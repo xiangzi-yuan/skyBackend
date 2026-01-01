@@ -6,7 +6,7 @@ import com.sky.constant.*;
 import com.sky.context.BaseContext;
 import com.sky.converter.EmployeeReadConvert;
 import com.sky.converter.EmployeeWriteConvert;
-import com.sky.dto.*;
+import com.sky.dto.PasswordEditDTO;
 import com.sky.dto.employee.EmployeeCreateDTO;
 import com.sky.dto.employee.EmployeeLoginDTO;
 import com.sky.dto.employee.EmployeePageQueryDTO;
@@ -17,20 +17,28 @@ import com.sky.exception.AccountNotFoundException;
 import com.sky.exception.PasswordErrorException;
 import com.sky.mapper.EmployeeMapper;
 import com.sky.properties.JwtProperties;
+import com.sky.dto.employee.EmployeeRoleUpgradeDTO;
+import com.sky.exception.BusinessException;
 import com.sky.readmodel.employee.EmployeeAuthInfo;
 import com.sky.readmodel.employee.EmployeeDetailRM;
 import com.sky.readmodel.employee.EmployeeLoginRM;
 import com.sky.readmodel.employee.EmployeePageRM;
+import com.sky.readmodel.employee.EmployeeRoleRM;
 import com.sky.result.PageResult;
+import com.sky.role.RoleLevel;
 import com.sky.service.EmployeeService;
 import com.sky.utils.JwtUtil;
 import com.sky.vo.employee.EmployeeDetailVO;
 import com.sky.vo.employee.EmployeeLoginVO;
 import com.sky.vo.employee.EmployeePageVO;
+import com.sky.vo.employee.EmployeeRoleVO;
+import com.sky.vo.employee.RoleLevelOptionVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +99,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .name(rm.getName())
                 .token(token)
                 .needChangePassword(rm.getPwdChanged() == null || rm.getPwdChanged() == 0)
+                .role(rm.getRole())
                 .build();
     }
 
@@ -200,5 +209,95 @@ public class EmployeeServiceImpl implements EmployeeService {
         emp.setId(id);
         emp.setStatus(status);
         employeeMapper.updateStatus(emp);
+    }
+
+    /**
+     * 提升员工权限（仅SUPER可用）
+     */
+    @Override
+    public void upgradeRole(EmployeeRoleUpgradeDTO dto) {
+        Long currentUserId = BaseContext.getCurrentId();
+        
+        // 1. 验证目标员工是否存在
+        EmployeeRoleRM targetEmployee = employeeMapper.getRoleInfoById(dto.getEmployeeId());
+        if (targetEmployee == null) {
+            throw new AccountNotFoundException(MessageConstant.ACCOUNT_NOT_FOUND);
+        }
+
+        // 2. 验证权限等级是否合法
+        RoleLevel newRoleLevel = RoleLevel.fromValue(dto.getNewRole());
+        if (newRoleLevel == null) {
+            throw new IllegalArgumentException("无效的权限等级");
+        }
+
+        // 3. 不允许修改自己的权限
+        if (dto.getEmployeeId().equals(currentUserId)) {
+            throw new BusinessException("不能修改自己的权限");
+        }
+
+        // 4. 不允许降低SUPER用户的权限（防止误操作导致系统无管理员）
+        if (targetEmployee.getRole() != null && 
+            targetEmployee.getRole().equals(RoleLevel.SUPER.getValue()) &&
+            !dto.getNewRole().equals(RoleLevel.SUPER.getValue())) {
+            throw new BusinessException("不能降低超级管理员的权限");
+        }
+
+        // 5. 执行更新
+        employeeMapper.updateRole(
+            dto.getEmployeeId(), 
+            dto.getNewRole(),
+            LocalDateTime.now(),
+            currentUserId
+        );
+    }
+
+    /**
+     * 获取员工权限信息
+     */
+    @Override
+    public EmployeeRoleVO getRoleInfo(Long employeeId) {
+        EmployeeRoleRM rm = employeeMapper.getRoleInfoById(employeeId);
+        if (rm == null) {
+            throw new AccountNotFoundException(MessageConstant.ACCOUNT_NOT_FOUND);
+        }
+
+        RoleLevel roleLevel = RoleLevel.fromValue(rm.getRole());
+        String roleName = roleLevel != null ? roleLevel.name() : "UNKNOWN";
+
+        return EmployeeRoleVO.builder()
+                .id(rm.getId())
+                .name(rm.getName())
+                .username(rm.getUsername())
+                .role(rm.getRole())
+                .roleName(roleName)
+                .build();
+    }
+
+    /**
+     * 获取所有可用的权限等级选项
+     */
+    @Override
+    public List<RoleLevelOptionVO> getRoleLevelOptions() {
+        List<RoleLevelOptionVO> options = new ArrayList<>();
+        
+        options.add(RoleLevelOptionVO.builder()
+                .value(RoleLevel.STAFF.getValue())
+                .label(RoleLevel.STAFF.name())
+                .description("普通员工")
+                .build());
+        
+        options.add(RoleLevelOptionVO.builder()
+                .value(RoleLevel.MANAGER.getValue())
+                .label(RoleLevel.MANAGER.name())
+                .description("经理")
+                .build());
+        
+        options.add(RoleLevelOptionVO.builder()
+                .value(RoleLevel.SUPER.getValue())
+                .label(RoleLevel.SUPER.name())
+                .description("超级管理员")
+                .build());
+        
+        return options;
     }
 }
