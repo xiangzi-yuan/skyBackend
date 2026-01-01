@@ -1,0 +1,50 @@
+# ==========================================
+# 苍穹外卖 生产环境配置
+# 用于 Docker 容器部署
+# ==========================================
+
+spring:
+  config:
+    # 不再导入 dev-local 配置
+    import: ""
+
+sky:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # Docker 容器内使用服务名访问
+    host: ${SKY_DATASOURCE_HOST:mysql}
+    port: ${SKY_DATASOURCE_PORT:3306}
+    database: ${SKY_DATASOURCE_DATABASE:sky_take_out}
+    username: ${SKY_DATASOURCE_USERNAME:root}
+    password: ${SKY_DATASOURCE_PASSWORD:}
+
+  redis:
+    # Docker 容器内使用服务名访问
+    host: ${SKY_REDIS_HOST:redis}
+    port: ${SKY_REDIS_PORT:6379}
+    timeout: 2000ms
+    database: 0
+
+  alioss:
+    endpoint: ${SKY_ALIOSS_ENDPOINT:}
+    access-key-id: ${SKY_ALIOSS_ACCESS_KEY_ID:}
+    access-key-secret: ${SKY_ALIOSS_ACCESS_KEY_SECRET:}
+    bucket-name: ${SKY_ALIOSS_BUCKET_NAME:}
+
+  wechat:
+    appid: ${SKY_WECHAT_APPID:}
+    secret: ${SKY_WECHAT_SECRET:}
+
+security:
+  password:
+    bcrypt-cost: 12
+
+# 生产环境日志级别调整
+logging:
+  level:
+    com:
+      sky:
+        mapper: info
+        service: info
+        controller: info
+    root: warn
