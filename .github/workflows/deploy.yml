@@ -1,13 +1,8 @@
-# 苍穹外卖后端 - 自动部署到服务器
-# push 到 master 分支时自动触发
-
 name: Deploy Backend
 
 on:
   push:
     branches: [master]
-
-  # 手动触发（GitHub 页面点击按钮）
   workflow_dispatch:
 
 jobs:
@@ -15,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 拉取代码
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 清理服务器旧代码（不使用 sudo）
+      - name: Clean remote code dir
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -28,10 +23,8 @@ jobs:
             set -euo pipefail
             rm -rf /opt/sky/skyBackend
             mkdir -p /opt/sky/skyBackend
-            test -w /opt/sky/skyBackend
-            echo "✅ 清理完成：/opt/sky/skyBackend"
 
-      - name: 上传代码到服务器（排除无用目录）
+      - name: Upload source to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -41,13 +34,13 @@ jobs:
           target: "/opt/sky/skyBackend"
           overwrite: true
 
-      - name: 重新构建并启动（不主动 pull，避免 Docker Hub 超时）
+      - name: Build & Restart backend
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 100m
+          command_timeout: 120m
           script: |
             set -euo pipefail
             cd /opt/sky
@@ -55,11 +48,9 @@ jobs:
             export DOCKER_BUILDKIT=1
             export COMPOSE_DOCKER_CLI_BUILD=1
 
-            # 关键点：不拉取远端基础镜像，避免 registry 超时
+            # 不拉取远端基础镜像，避免 DockerHub 超时
             docker compose build --pull=false backend
-
-            # 启动/更新
             docker compose up -d backend
-
             docker compose ps
-            echo "✅ 后端部署完成！"
+
+            echo "✅ 后端部署完成"
