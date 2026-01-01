@@ -37,5 +37,33 @@ jobs:
           command_timeout: 100m
           script: |
             cd /opt/sky
-            docker compose up -d --build backend
+            
+            # 构建后端（带重试机制，最多尝试 3 次）
+            MAX_RETRIES=3
+            RETRY_COUNT=0
+            BUILD_SUCCESS=false
+            
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              echo "🔨 第 $RETRY_COUNT 次构建尝试..."
+              
+              if docker compose build --no-cache backend; then
+                BUILD_SUCCESS=true
+                echo "✅ 构建成功！"
+                break
+              else
+                echo "❌ 构建失败，等待 10 秒后重试..."
+                docker builder prune -f 2>/dev/null || true
+                sleep 10
+              fi
+            done
+            
+            if [ "$BUILD_SUCCESS" = false ]; then
+              echo "❌ 构建失败，已重试 $MAX_RETRIES 次"
+              exit 1
+            fi
+            
+            # 启动服务
+            docker compose up -d backend
+            docker image prune -f 2>/dev/null || true
             echo "✅ 后端部署完成！"
