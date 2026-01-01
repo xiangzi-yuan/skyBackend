@@ -8,54 +8,52 @@ on:
     branches: [master]
   workflow_dispatch:
 
-concurrency:
-  group: deploy-backend-master
-  cancel-in-progress: true
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 服务器拉取代码 + 构建并启动
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 准备服务器目录（只清理代码，不动 /opt/sky 下其他东西）
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 120m
+          command_timeout: 30m
           script: |
             set -euo pipefail
+            mkdir -p /opt/sky/skyBackend
+            # 只清空代码目录内容（避免 rm -rf 误删目录本身）
+            rm -rf /opt/sky/skyBackend/*
 
-            APP_DIR="/opt/sky/skyBackend"
-            COMPOSE_DIR="/opt/sky"
+      - name: 上传代码到服务器（排除 target/.git/.idea）
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: ".,!.git,!.git/**,!**/target/**,!.idea,!.idea/**"
+          target: "/opt/sky/skyBackend"
+          overwrite: true
 
-            # 1) 确保代码仓库已在服务器初始化（只要第一次做一次）
-            if [ ! -d "$APP_DIR/.git" ]; then
-              echo "❌ $APP_DIR 不是 git 仓库。请按我下面的【服务器配合】初始化一次。"
-              exit 1
-            fi
+      - name: 构建并启动 backend
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 100m
+          script: |
+            set -euo pipefail
+            cd /opt/sky
 
-            # 2) 更新到 master 最新（会自动清理掉被删除/改名的旧文件）
-            cd "$APP_DIR"
-            git fetch --prune origin
-            git reset --hard origin/master
-            git clean -fd
-
-            # 3) 确保 buildx builder 存在（没有就创建一次）
-            if ! docker buildx inspect skybuilder >/dev/null 2>&1; then
-              docker buildx create --name skybuilder --driver docker-container --use
-            else
-              docker buildx use skybuilder
-            fi
-            docker buildx inspect --bootstrap >/dev/null
-
-            # 4) 构建 + 更新容器
-            cd "$COMPOSE_DIR"
             export DOCKER_BUILDKIT=1
             export COMPOSE_DOCKER_CLI_BUILD=1
-            export BUILDX_BUILDER=skybuilder
 
+            # 构建 + 更新（依赖 Dockerfile 的缓存，后续不会每次都刷 2000 行下载）
             docker compose build backend
             docker compose up -d backend
 
