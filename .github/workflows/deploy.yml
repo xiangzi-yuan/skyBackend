@@ -39,6 +39,7 @@ jobs:
             cd /opt/sky
             
             # 构建后端（带重试机制，最多尝试 3 次）
+            # 利用 Docker 层缓存：pom.xml 不变时不会重新下载依赖
             MAX_RETRIES=3
             RETRY_COUNT=0
             BUILD_SUCCESS=false
@@ -47,7 +48,7 @@ jobs:
               RETRY_COUNT=$((RETRY_COUNT + 1))
               echo "🔨 第 $RETRY_COUNT 次构建尝试..."
               
-              if docker compose build --no-cache backend; then
+              if docker compose build backend; then
                 BUILD_SUCCESS=true
                 echo "✅ 构建成功！"
                 break
