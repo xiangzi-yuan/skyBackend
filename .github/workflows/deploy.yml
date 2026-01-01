@@ -22,11 +22,11 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '17'
-          distribution: 'temurin'
+          distribution: 'zulu'
           cache: maven
 
       - name: Maven 构建
-        run: mvn clean package -DskipTests -B
+        run: mvn clean package -DskipTests -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
       - name: 上传 JAR 到服务器
         uses: appleboy/scp-action@v0.1.7
