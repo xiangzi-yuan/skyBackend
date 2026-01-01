@@ -1,4 +1,4 @@
-package com.sky.vo;
+package com.sky.vo.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
