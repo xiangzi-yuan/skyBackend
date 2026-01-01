@@ -13,11 +13,21 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    container: maven:3.8.6-eclipse-temurin-17
+    container:
+      image: maven:3.8.6-eclipse-temurin-17
+    env:
+      JAVA_HOME: /opt/java/openjdk
+      PATH: /opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     
     steps:
       - name: 拉取代码
         uses: actions/checkout@v4
+
+      - name: 打印Java/Maven信息
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version
+          mvn -version
 
       - name: Maven 构建
         run: mvn clean package -DskipTests -B
@@ -40,5 +50,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /opt/sky
-            docker compose up -d --build backend
+            docker compose restart backend
             echo "✅ 后端部署完成！"
