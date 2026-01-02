@@ -352,7 +352,7 @@ jobs:
 
 ## 2) `backend/Dockerfile`
 
-你现在 Dockerfile 里已经是多阶段构建，但你后面日志里显示你实际在用的是 `mvn -B -DskipTests clean package`（没有 go-offline 离线模式）。
+现在 Dockerfile 里已经是多阶段构建，但你后面日志里显示你实际在用的是 `mvn -B -DskipTests clean package`（没有 go-offline 离线模式）。
 这份最终版我给你一个**稳定、最少变动、缓存更可靠**的版本：
 
 * 先只 COPY 各模块 pom.xml（提升缓存命中）
