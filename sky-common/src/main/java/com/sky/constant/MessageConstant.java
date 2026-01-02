@@ -7,7 +7,7 @@ public class MessageConstant {
 
     public static final String PASSWORD_NEED_CHANGE = "首次登录请修改密码";
     public static final String ALREADY_EXISTS = "用户已存在";
-    public static final String PASSWORD_ERROR = "密码错误[CI]";
+    public static final String PASSWORD_ERROR = "密码错误[CI TEST]";
     public static final String OLD_PASSWORD_ERROR = "原密码错误";
     public static final String ACCOUNT_NOT_FOUND = "账号不存在";
     public static final String ACCOUNT_LOCKED = "账号被锁定";
