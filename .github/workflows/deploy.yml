@@ -2,43 +2,75 @@ name: Deploy Backend
 
 on:
   push:
-    branches: [master]
-  workflow_dispatch:
+    branches: ["master"]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: 拉取代码
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 上传代码到服务器（排除 .git/target/.idea）
+      # 1) 上传后端源码到服务器 /opt/sky/skyBackend（compose 的 build.context 用的是 ./skyBackend）
+      - name: Upload backend source to server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: ".,!.git,!.git/**,!**/target/**,!.idea,!.idea/**"
-          target: "/opt/sky/skyBackend"
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
           overwrite: true
+          target: /opt/sky/skyBackend
+          source: |
+            pom.xml
+            sky-common/**
+            sky-pojo/**
+            sky-server/**
 
-      - name: 重新构建并启动（不 pull 基础镜像）
+      # 1.1) 上传 Dockerfile 到 /opt/sky/backend/Dockerfile（与你 compose: ../backend/Dockerfile 对齐）
+      - name: Upload Dockerfile to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          overwrite: true
+          target: /opt/sky/backend
+          source: |
+            backend/Dockerfile
+
+      # 2) 服务器上 build + up
+      - name: Build & Restart backend
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 100m
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          command_timeout: 30m
           script: |
             set -euo pipefail
-            cd /opt/sky
 
+            # 确保目录存在且当前用户可写（避免 sudo 卡密码）
+            mkdir -p /opt/sky /opt/sky/skyBackend /opt/sky/backend
+
+            # 选择 BuildKit
             export DOCKER_BUILDKIT=1
             export COMPOSE_DOCKER_CLI_BUILD=1
 
-            # 关键点：不拉取远端基础镜像，避免 registry 超时
-            docker compose build --pull=false backend
-            docker compose up -d backend
-            docker compose ps
+            # 统一 builder 的缓存保留阈值：10GiB（字节数）
+            DESIRED_KEEP=10737418240
 
-            echo "后端部署完成"
+            # 如果 skybuilder 不存在，或 keepstorage 不一致：重建
+            CURRENT_KEEP="$(docker buildx inspect skybuilder 2>/dev/null \
+              | grep -oE -- '--oci-worker-gc-keepstorage=[0-9]+' \
+              | head -n 1 | cut -d= -f2 || true)"
+
+            if ! docker buildx inspect skybuilder >/dev/null 2>&1; then
+              echo "[buildx] skybuilder not found, creating..."
+              docker buildx create --name skybuilder --driver docker-container --use \
+                --buildkitd-flags "--oci-worker-gc-keepstorage=${DESIRED_KEEP}"
+            elif [ -n "$CURRENT_KEEP" ] && [ "$CURRENT_KEEP" != "$DESIRED_KEEP" ]; then
+              echo "[buildx] skybuilder keepstorage
