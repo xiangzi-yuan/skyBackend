@@ -12,14 +12,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 1) 上传后端源码到服务器 /opt/sky/skyBackend（compose 的 build.context 用的是 ./skyBackend）
-      - name: Upload backend source to server
+      # 0) 先检查 secrets 是否存在（避免空跑）
+      - name: Check SSH secrets
+        run: |
+          if [ -z "${{ secrets.SERVER_HOST }}" ]; then
+            echo "SERVER_HOST is empty"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SERVER_USER }}" ]; then
+            echo "SERVER_USER is empty"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "SSH_PRIVATE_KEY is empty"
+            exit 1
+          fi
+
+      # 1) 上传源码到服务器 /opt/sky/skyBackend
+      - name: Upload source to server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
           overwrite: true
           target: /opt/sky/skyBackend
           source: |
@@ -27,50 +43,47 @@ jobs:
             sky-common/**
             sky-pojo/**
             sky-server/**
-
-      # 1.1) 上传 Dockerfile 到 /opt/sky/backend/Dockerfile（与你 compose: ../backend/Dockerfile 对齐）
-      - name: Upload Dockerfile to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          overwrite: true
-          target: /opt/sky/backend
-          source: |
             backend/Dockerfile
 
       # 2) 服务器上 build + up
       - name: Build & Restart backend
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
           command_timeout: 30m
           script: |
             set -euo pipefail
 
-            # 确保目录存在且当前用户可写（避免 sudo 卡密码）
-            mkdir -p /opt/sky /opt/sky/skyBackend /opt/sky/backend
+            mkdir -p /opt/sky/skyBackend
 
-            # 选择 BuildKit
             export DOCKER_BUILDKIT=1
             export COMPOSE_DOCKER_CLI_BUILD=1
 
-            # 统一 builder 的缓存保留阈值：10GiB（字节数）
-            DESIRED_KEEP=10737418240
-
-            # 如果 skybuilder 不存在，或 keepstorage 不一致：重建
-            CURRENT_KEEP="$(docker buildx inspect skybuilder 2>/dev/null \
-              | grep -oE -- '--oci-worker-gc-keepstorage=[0-9]+' \
-              | head -n 1 | cut -d= -f2 || true)"
-
+            # 你服务器上现在是 10GB（10737418240），这里必须一致
             if ! docker buildx inspect skybuilder >/dev/null 2>&1; then
-              echo "[buildx] skybuilder not found, creating..."
               docker buildx create --name skybuilder --driver docker-container --use \
-                --buildkitd-flags "--oci-worker-gc-keepstorage=${DESIRED_KEEP}"
-            elif [ -n "$CURRENT_KEEP" ] && [ "$CURRENT_KEEP" != "$DESIRED_KEEP" ]; then
-              echo "[buildx] skybuilder keepstorage
+                --buildkitd-flags '--oci-worker-gc-keepstorage=10737418240'
+            fi
+            docker buildx use skybuilder
+            docker buildx inspect --bootstrap >/dev/null
+
+            cd /opt/sky
+
+            docker pull maven:3.9.6-eclipse-temurin-17 || true
+            docker pull eclipse-temurin:17-jre || true
+
+            docker compose build --pull=false backend
+            docker compose up -d backend
+            docker compose ps
+
+            # 如果 unhealthy，打印日志并失败
+            if docker compose ps --format json | grep -q '"Service":"backend".*"Health":"unhealthy"'; then
+              echo "backend unhealthy, tail logs:"
+              docker compose logs -n 200 backend || true
+              exit 1
+            fi
+
+            echo "✅ 后端部署完成"
