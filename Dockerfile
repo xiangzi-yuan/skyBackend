@@ -10,7 +10,7 @@ COPY sky-pojo/pom.xml sky-pojo/pom.xml
 COPY sky-server/pom.xml sky-server/pom.xml
 
 # 2) 预下载依赖（与源码无关）
-RUN --mount=type=cache,target=/root/.m2 \
+RUN --mount=type=cache,id=m2repo,target=/root/.m2,sharing=locked \
     mvn -B -DskipTests -Dmaven.repo.local=/root/.m2 \
     dependency:go-offline
 
@@ -20,7 +20,7 @@ COPY sky-pojo sky-pojo
 COPY sky-server sky-server
 
 # 4) 编译打包（复用 /root/.m2 缓存）
-RUN --mount=type=cache,target=/root/.m2 \
+RUN --mount=type=cache,id=m2repo,target=/root/.m2,sharing=locked \
     mvn -B -DskipTests -Dmaven.repo.local=/root/.m2 \
     -pl sky-server -am \
     clean package
