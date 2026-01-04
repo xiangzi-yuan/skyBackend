@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.4
+
 FROM maven:3.9.6-eclipse-temurin-17 AS builder
 WORKDIR /build
 

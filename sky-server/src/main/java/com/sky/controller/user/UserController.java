@@ -33,10 +33,9 @@ public class UserController {
     }
     @PostMapping("/logout")
     @ApiOperation("退出登录")
-    public Result logout(@RequestBody UserLoginDTO dto) {
-        log.info("微信用户登录:{}", dto.getCode());
-        UserLoginVO userVO = userService.login(dto);
-        return Result.success(userVO);
+    public Result<String> logout() {
+        log.info("微信用户退出登录");
+        return Result.success();
     }
 
 }
