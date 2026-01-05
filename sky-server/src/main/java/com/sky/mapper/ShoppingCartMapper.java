@@ -1,6 +1,8 @@
 package com.sky.mapper;
 
+import com.sky.annotation.AutoFill;
 import com.sky.entity.ShoppingCart;
+import com.sky.enumeration.OperationType;
 import com.sky.vo.ShoppingCartRM;
 import org.apache.ibatis.annotations.*;
 
@@ -36,6 +38,7 @@ public interface ShoppingCartMapper {
             insert into shopping_cart (name, user_id, dish_id, setmeal_id, dish_flavor, number, amount, image, create_time)
             values (#{name}, #{userId}, #{dishId}, #{setmealId}, #{dishFlavor}, #{number}, #{amount}, #{image}, #{createTime})
             """)
+    @AutoFill(OperationType.INSERT)
     void insert(ShoppingCart shoppingCart);
 
 }

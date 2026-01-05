@@ -74,7 +74,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         } else {
             // 3. 不存在：新增购物车记录
             shoppingCart.setNumber(1);
-            shoppingCart.setCreateTime(LocalDateTime.now());
+            // shoppingCart.setCreateTime(LocalDateTime.now());
 
             if (dto.getDishId() != null) {
                 // 添加的是菜品
