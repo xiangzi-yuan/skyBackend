@@ -31,7 +31,7 @@ public interface DishFlavorMapper {
      *
      * @param dishId 菜品ID
      * @return 口味列表
-     * MyBatis 会把查询出来的每一行映射成一个 DishFlavor 对象，然后自动装进 List 返回
+     *         MyBatis 会把查询出来的每一行映射成一个 DishFlavor 对象，然后自动装进 List 返回
      */
     @Select("select id, dish_id, name, value from dish_flavor where dish_id = #{dishId}")
     List<DishFlavor> selectByDishId(Long dishId);
@@ -41,5 +41,13 @@ public interface DishFlavorMapper {
      * @param dishIds
      */
     void delete(@Param("dishIds") List<Long> dishIds);
+
+    /**
+     * 根据多个菜品ID批量查询口味列表
+     *
+     * @param dishIds 菜品ID列表
+     * @return 口味列表
+     */
+    List<DishFlavor> selectByDishIds(@Param("dishIds") List<Long> dishIds);
 
 }

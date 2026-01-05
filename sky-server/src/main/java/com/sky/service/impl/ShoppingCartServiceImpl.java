@@ -1,6 +1,7 @@
 package com.sky.service.impl;
 
 import com.sky.context.BaseContext;
+import com.sky.dto.ShoppingCartDTO;
 import com.sky.mapper.ShoppingCartMapper;
 import com.sky.readmodel.dish.DishItemRM;
 import com.sky.service.ShoppingCartService;
@@ -31,6 +32,13 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
                     return vo;
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void add(ShoppingCartDTO dto) {
+        Long userId = BaseContext.getCurrentId();
+
+
     }
 
 
