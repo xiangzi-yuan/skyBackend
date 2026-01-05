@@ -71,4 +71,9 @@ public interface SetmealMapper {
      * 根据分类ID查询套餐列表（可选按状态过滤，User端专用）
      */
     List<SetmealListRM> listByCategoryId(@Param("categoryId") Long categoryId, @Param("status") Integer status);
+
+    /**
+     * 批量查询（去重）套餐所属分类ID（排除已删除）。
+     */
+    List<Long> getCategoryIdsByIds(@Param("ids") List<Long> ids);
 }

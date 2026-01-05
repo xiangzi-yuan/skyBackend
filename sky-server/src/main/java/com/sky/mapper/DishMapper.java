@@ -77,5 +77,9 @@ public interface DishMapper {
     @AutoFill(OperationType.UPDATE)
     int update(Dish dish);
 
+    /**
+     * 批量查询（去重）菜品所属分类ID（排除已删除）。
+     */
+    List<Long> getCategoryIdsByIds(@Param("ids") List<Long> ids);
 
 }

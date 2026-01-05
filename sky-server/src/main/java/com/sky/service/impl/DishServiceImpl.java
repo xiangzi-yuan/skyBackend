@@ -21,12 +21,17 @@ import com.sky.readmodel.dish.DishPageRM;
 import com.sky.readmodel.dish.DishSetmealRelationRM;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
+import com.sky.service.VersionService;
+import com.sky.service.cache.DishCacheDelegate;
 import com.sky.vo.dish.DishDetailVO;
-import com.sky.vo.dish.DishFlavorVO;
 import com.sky.vo.dish.DishPageVO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -47,6 +52,15 @@ public class DishServiceImpl implements DishService {
     private DishReadConvert dishReadConvert;
     @Autowired
     private SetmealDishMapper setmealDishMapper;
+    @Autowired
+    private VersionService versionService;
+    @Autowired
+    private DishCacheDelegate dishCacheDelegate;
+    @Autowired
+    private CacheManager cacheManager;
+
+    private static final String DISH_LIST_VER_KEY_PREFIX = "dish:list:ver:";
+    private static final String DISH_DETAIL_CACHE_NAME = "dishDetailCache";
 
 
 
@@ -68,6 +82,9 @@ public class DishServiceImpl implements DishService {
             flavors.forEach(flavor -> flavor.setDishId(dishId));
             dishFlavorMapper.insertBatch(flavors);
         }
+
+        bumpDishListVerAfterCommit(dish.getCategoryId());
+        evictAfterCommit(DISH_DETAIL_CACHE_NAME, dishId);
     }
 
     @Override
@@ -98,25 +115,17 @@ public class DishServiceImpl implements DishService {
      */
     @Override
     public DishDetailVO getDetailById(Long id) {
-        // 1. 查询菜品基本信息（含分类名称）
-        DishDetailRM dishDetailRM = dishMapper.getDetailById(id);
-
-        // 2. 查询关联的口味列表
-        List<DishFlavor> flavors = dishFlavorMapper.selectByDishId(id);
-
-        // 3. 转换为 VO
-        DishDetailVO vo = dishReadConvert.toDetailVO(dishDetailRM);
-
-        // 4. 转换并设置口味列表
-        List<DishFlavorVO> flavorVOs = dishReadConvert.toFlavorVOList(flavors);
-        vo.setFlavors(flavorVOs);
-
+        DishDetailVO vo = dishCacheDelegate.getDetailByIdCached(id);
+        if (vo == null) {
+            throw new IllegalArgumentException(MessageConstant.DISH_NOT_FOUND_OR_UPDATE_FAILED + ", id=" + id);
+        }
         return vo;
     }
 
     @Override
     public List<DishDetailVO> listOnSaleByCategoryId(Long categoryId) {
-        return listByCategoryIdInternal(categoryId, StatusConstant.ENABLE);
+        long ver = versionService.getOrInit(DISH_LIST_VER_KEY_PREFIX + categoryId);
+        return dishCacheDelegate.listOnSaleByCategoryIdCached(categoryId, ver);
     }
 
     @Override
@@ -206,15 +215,31 @@ public class DishServiceImpl implements DishService {
 
         // 软删除：标记 is_deleted = 1，保留数据用于历史订单查询
         // 注意：口味数据不删除，因为订单详情可能需要展示
+        List<Long> categoryIds = dishMapper.getCategoryIdsByIds(idList);
         dishMapper.softDelete(idList, LocalDateTime.now());
+
+        if (categoryIds != null) {
+            categoryIds.stream()
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .forEach(this::bumpDishListVerAfterCommit);
+        }
+        idList.forEach(dishId -> evictAfterCommit(DISH_DETAIL_CACHE_NAME, dishId));
     }
 
     @Override
+    @Transactional
     public void updateStatus(Long id, Integer status) {
+        DishDetailRM existing = dishMapper.getDetailById(id);
+        Long categoryId = existing != null ? existing.getCategoryId() : null;
+
         Dish dish = new Dish();
         dish.setId(id);
         dish.setStatus(status);
         dishMapper.updateStatus(dish);
+
+        bumpDishListVerAfterCommit(categoryId);
+        evictAfterCommit(DISH_DETAIL_CACHE_NAME, id);
     }
 
     /**
@@ -224,6 +249,8 @@ public class DishServiceImpl implements DishService {
     @Transactional
     public void changeDish(DishUpdateDTO dto) {
         Long dishId = dto.getId();
+        DishDetailRM existing = dishMapper.getDetailById(dishId);
+        Long oldCategoryId = existing != null ? existing.getCategoryId() : null;
 
         // 1) 更新主表
         Dish dish = new Dish();
@@ -238,24 +265,62 @@ public class DishServiceImpl implements DishService {
         dishFlavorMapper.deleteByDishId(dishId);
 
         // 3) 有口味则插入；无/空则保持清空
-        if (dto.getFlavors() == null || dto.getFlavors().isEmpty()) {
-            return;
-        }
-        List<DishFlavor> flavors = dishWriteConvert.fromFlavorDTOList(dto.getFlavors());
-        flavors.forEach(f -> f.setDishId(dishId));
+        if (dto.getFlavors() != null && !dto.getFlavors().isEmpty()) {
+            List<DishFlavor> flavors = dishWriteConvert.fromFlavorDTOList(dto.getFlavors());
+            flavors.forEach(f -> f.setDishId(dishId));
 
-        flavors = flavors.stream()
-                .filter(f -> f.getName() != null && !f.getName().isBlank())
-                .filter(f -> f.getValue() != null && !f.getValue().isBlank())
-                .toList();
+            flavors = flavors.stream()
+                    .filter(f -> f.getName() != null && !f.getName().isBlank())
+                    .filter(f -> f.getValue() != null && !f.getValue().isBlank())
+                    .toList();
 
-        if (!flavors.isEmpty()) {
-            dishFlavorMapper.insertBatch(flavors);
+            if (!flavors.isEmpty()) {
+                dishFlavorMapper.insertBatch(flavors);
+            }
         }
+
+        bumpDishListVerAfterCommit(oldCategoryId);
+        Long newCategoryId = dto.getCategoryId();
+        if (newCategoryId != null && !newCategoryId.equals(oldCategoryId)) {
+            bumpDishListVerAfterCommit(newCategoryId);
+        }
+        evictAfterCommit(DISH_DETAIL_CACHE_NAME, dishId);
     }
 
+    private void bumpDishListVerAfterCommit(Long categoryId) {
+        if (categoryId == null) {
+            return;
+        }
+        versionService.bumpAfterCommit(DISH_LIST_VER_KEY_PREFIX + categoryId);
+    }
 
+    private void evictAfterCommit(String cacheName, Object key) {
+        if (cacheName == null || cacheName.isBlank() || key == null) {
+            return;
+        }
 
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    evict(cacheName, key);
+                }
+            });
+            return;
+        }
+
+        evict(cacheName, key);
+    }
+
+    private void evict(String cacheName, Object key) {
+        try {
+            Cache cache = cacheManager.getCache(cacheName);
+            if (cache != null) {
+                cache.evict(key);
+            }
+        } catch (Exception ignored) {
+        }
+    }
 }
 
 

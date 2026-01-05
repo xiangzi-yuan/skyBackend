@@ -19,15 +19,20 @@ import com.sky.readmodel.setmeal.SetmealDetailRM;
 import com.sky.readmodel.setmeal.SetmealPageRM;
 import com.sky.result.PageResult;
 import com.sky.service.SetmealService;
+import com.sky.service.VersionService;
+import com.sky.service.cache.SetmealCacheDelegate;
 import com.sky.vo.dish.DishItemVO;
 import com.sky.vo.setmeal.SetmealDetailVO;
-import com.sky.vo.setmeal.SetmealDishVO;
 import com.sky.vo.setmeal.SetmealListVO;
 import com.sky.vo.setmeal.SetmealPageVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,6 +49,15 @@ public class SetmealServiceImpl implements SetmealService {
     SetmealDishMapper setmealDishMapper;
     @Autowired
     SetmealReadConvert setmealReadConvert;
+    @Autowired
+    VersionService versionService;
+    @Autowired
+    SetmealCacheDelegate setmealCacheDelegate;
+    @Autowired
+    CacheManager cacheManager;
+
+    private static final String SETMEAL_LIST_VER_KEY_PREFIX = "setmeal:list:ver:";
+    private static final String SETMEAL_DETAIL_CACHE_NAME = "setmealDetailCache";
 
     @Override
     @Transactional
@@ -61,6 +75,9 @@ public class SetmealServiceImpl implements SetmealService {
 
             setmealDishMapper.insertBatch(setmealDishes);
         }
+
+        bumpSetmealListVerAfterCommit(setmeal.getCategoryId());
+        evictAfterCommit(SETMEAL_DETAIL_CACHE_NAME, setmealId);
     }
 
     @Override
@@ -82,6 +99,9 @@ public class SetmealServiceImpl implements SetmealService {
     @Transactional
     public void changeSetmeal(SetmealUpdateDTO dto) {
         Long setmealId = dto.getId();
+        SetmealDetailRM existing = setmealMapper.getDetailById(setmealId);
+        Long oldCategoryId = existing != null ? existing.getCategoryId() : null;
+
         Setmeal setmeal = new Setmeal();
         setmealWriteConvert.mergeUpdate(dto, setmeal);
         setmeal.setId(setmealId); // !!!不要忘了mergeUpdate忽略了id
@@ -94,15 +114,21 @@ public class SetmealServiceImpl implements SetmealService {
         setmealDishMapper.deleteBySetmealId(setmealId);
 
         // 3) 有菜品则插入；无/空则保持清空
-        if (dto.getSetmealDishes() == null || dto.getSetmealDishes().isEmpty()) {
-            return;
-        }
-        List<SetmealDish> dishes = setmealWriteConvert.fromDishDTOList(dto.getSetmealDishes());
-        dishes.forEach(f -> f.setSetmealId(setmealId));
+        if (dto.getSetmealDishes() != null && !dto.getSetmealDishes().isEmpty()) {
+            List<SetmealDish> dishes = setmealWriteConvert.fromDishDTOList(dto.getSetmealDishes());
+            dishes.forEach(f -> f.setSetmealId(setmealId));
 
-        if (!dishes.isEmpty()) {
-            setmealDishMapper.insertBatch(dishes);
+            if (!dishes.isEmpty()) {
+                setmealDishMapper.insertBatch(dishes);
+            }
         }
+
+        bumpSetmealListVerAfterCommit(oldCategoryId);
+        Long newCategoryId = dto.getCategoryId();
+        if (newCategoryId != null && !newCategoryId.equals(oldCategoryId)) {
+            bumpSetmealListVerAfterCommit(newCategoryId);
+        }
+        evictAfterCommit(SETMEAL_DETAIL_CACHE_NAME, setmealId);
     }
 
 
@@ -121,16 +147,10 @@ public class SetmealServiceImpl implements SetmealService {
      */
     @Override
     public SetmealDetailVO getDetailById(Long id) {
-        SetmealDetailRM setmealDetailRM = setmealMapper.getDetailById(id);
-        if (setmealDetailRM == null) {
+        SetmealDetailVO vo = setmealCacheDelegate.getDetailByIdCached(id);
+        if (vo == null) {
             throw new IllegalArgumentException(MessageConstant.SETMEAL_NOT_FOUND + "，id=" + id);
         }
-        // 查询关联菜品列表
-        List<SetmealDish> dishes = setmealDishMapper.selectBySetmealId(id);
-
-        SetmealDetailVO vo = setmealReadConvert.toDetailVO(setmealDetailRM);
-        List<SetmealDishVO> dishVOS = setmealReadConvert.toDishVOList(dishes);
-        vo.setSetmealDishes(dishVOS);
         return vo;
     }
 
@@ -169,25 +189,40 @@ public class SetmealServiceImpl implements SetmealService {
             throw new DeletionNotAllowedException(MessageConstant.SETMEAL_ON_SALE);
         }
 
+        List<Long> categoryIds = setmealMapper.getCategoryIdsByIds(idList);
+
         // 2. 软删除：标记 is_deleted = 1，保留数据用于历史订单查询
         // 注意：setmeal_dish 关联表数据不删除，因为订单详情可能需要展示套餐内容
         setmealMapper.softDelete(idList, LocalDateTime.now());
+
+        if (categoryIds != null) {
+            categoryIds.stream()
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .forEach(this::bumpSetmealListVerAfterCommit);
+        }
+        idList.forEach(setmealId -> evictAfterCommit(SETMEAL_DETAIL_CACHE_NAME, setmealId));
     }
 
     @Override
+    @Transactional
     public void updateStatus(Long id, Integer status) {
+        SetmealDetailRM existing = setmealMapper.getDetailById(id);
+        Long categoryId = existing != null ? existing.getCategoryId() : null;
+
         Setmeal setmeal = new Setmeal();
         setmeal.setId(id);
         setmeal.setStatus(status);
         setmealMapper.updateStatus(setmeal);
 
+        bumpSetmealListVerAfterCommit(categoryId);
+        evictAfterCommit(SETMEAL_DETAIL_CACHE_NAME, id);
     }
 
     @Override
     public List<SetmealListVO> listOnSaleByCategoryId(Long categoryId) {
-        return setmealReadConvert.toListVOList(
-                setmealMapper.listByCategoryId(categoryId, StatusConstant.ENABLE)
-        );
+        long ver = versionService.getOrInit(SETMEAL_LIST_VER_KEY_PREFIX + categoryId);
+        return setmealCacheDelegate.listOnSaleByCategoryIdCached(categoryId, ver);
     }
 
     @Override
@@ -201,6 +236,41 @@ public class SetmealServiceImpl implements SetmealService {
                     return vo;
                 })
                 .collect(Collectors.toList());
+    }
+
+    private void bumpSetmealListVerAfterCommit(Long categoryId) {
+        if (categoryId == null) {
+            return;
+        }
+        versionService.bumpAfterCommit(SETMEAL_LIST_VER_KEY_PREFIX + categoryId);
+    }
+
+    private void evictAfterCommit(String cacheName, Object key) {
+        if (cacheName == null || cacheName.isBlank() || key == null) {
+            return;
+        }
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    evict(cacheName, key);
+                }
+            });
+            return;
+        }
+
+        evict(cacheName, key);
+    }
+
+    private void evict(String cacheName, Object key) {
+        try {
+            Cache cache = cacheManager.getCache(cacheName);
+            if (cache != null) {
+                cache.evict(key);
+            }
+        } catch (Exception ignored) {
+        }
     }
 
 }
