@@ -48,6 +48,8 @@ public class DishServiceImpl implements DishService {
     @Autowired
     private SetmealDishMapper setmealDishMapper;
 
+
+
     @Override
     @Transactional
     public void save(DishCreateDTO dto) {
@@ -84,12 +86,11 @@ public class DishServiceImpl implements DishService {
     /**
      * 根据ID查询菜品详情
      *
-     * <p>
-     * 查询流程：
+     * <p>查询流程：
      * <ol>
-     * <li>查询菜品基础信息（包含分类名称）</li>
-     * <li>查询菜品关联的口味列表</li>
-     * <li>组装并转换为 VO 返回</li>
+     *   <li>查询菜品基础信息（包含分类名称）</li>
+     *   <li>查询菜品关联的口味列表</li>
+     *   <li>组装并转换为 VO 返回</li>
      * </ol>
      *
      * @param id 菜品ID
@@ -125,33 +126,24 @@ public class DishServiceImpl implements DishService {
 
     /**
      * 内部复用方法：根据分类ID查询菜品列表
-     * 
      * @param categoryId 分类ID
-     * @param status     状态（null 表示不过滤）
+     * @param status 状态（null 表示不过滤）
      */
     private List<DishDetailVO> listByCategoryIdInternal(Long categoryId, Integer status) {
         List<DishDetailRM> dishDetailRMList = dishMapper.getByCategoryId(categoryId, status, CategoryConstant.DISH);
         return dishDetailRMList.stream()
-                .map(rm -> {
-                    DishDetailVO vo = dishReadConvert.toDetailVO(rm);
-                    // 查询并设置口味列表
-                    List<DishFlavor> flavors = dishFlavorMapper.selectByDishId(rm.getId());
-                    List<DishFlavorVO> flavorVOs = dishReadConvert.toFlavorVOList(flavors);
-                    vo.setFlavors(flavorVOs);
-                    return vo;
-                })
+                .map(dishReadConvert::toDetailVO)
                 .toList();
     }
 
     /**
      * 删除菜品（支持批量）- 软删除
      *
-     * <p>
-     * 业务规则：
+     * <p>业务规则：
      * <ul>
-     * <li>起售中的菜品不能删除</li>
-     * <li>被套餐关联的菜品不能删除</li>
-     * <li>采用软删除，保留历史数据用于订单统计</li>
+     *   <li>起售中的菜品不能删除</li>
+     *   <li>被套餐关联的菜品不能删除</li>
+     *   <li>采用软删除，保留历史数据用于订单统计</li>
      * </ul>
      */
     @Override
@@ -211,6 +203,7 @@ public class DishServiceImpl implements DishService {
             throw new DeletionNotAllowedException(sb.toString());
         }
 
+
         // 软删除：标记 is_deleted = 1，保留数据用于历史订单查询
         // 注意：口味数据不删除，因为订单详情可能需要展示
         dishMapper.softDelete(idList, LocalDateTime.now());
@@ -261,4 +254,8 @@ public class DishServiceImpl implements DishService {
         }
     }
 
+
+
 }
+
+
