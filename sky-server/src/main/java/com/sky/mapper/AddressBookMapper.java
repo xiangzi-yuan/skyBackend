@@ -3,6 +3,7 @@ package com.sky.mapper;
 import com.sky.entity.AddressBook;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -24,6 +25,15 @@ public interface AddressBookMapper {
      * 查询用户所有地址
      */
     List<AddressBook> listByUserId(@Param("userId") Long userId);
+
+    @Select("""
+            select id, user_id, consignee, sex, phone,
+                   province_code, province_name, city_code, city_name,
+                   district_code, district_name, detail, label, is_default
+            from address_book
+            where id = #{id}
+            """)
+    AddressBook getById(@Param("id") Long id);
 
     /**
      * 根据 id 和 userId 查询地址
