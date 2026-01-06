@@ -10,6 +10,7 @@
             (#{flavor.dishId}, #{flavor.name}, #{flavor.value})
         </foreach>
     </insert>
+
     <delete id="delete">
         delete from dish_flavor
         <where>

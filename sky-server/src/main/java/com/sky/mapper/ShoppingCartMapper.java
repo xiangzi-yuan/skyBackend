@@ -3,7 +3,7 @@ package com.sky.mapper;
 import com.sky.annotation.AutoFill;
 import com.sky.entity.ShoppingCart;
 import com.sky.enumeration.OperationType;
-import com.sky.vo.ShoppingCartRM;
+import com.sky.readmodel.ShoppingCartRM;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;

@@ -68,7 +68,7 @@ public class AddressBookServiceImpl implements AddressBookService {
         Long userId = BaseContext.getCurrentId();
         AddressBook addressBook = addressBookMapper.getByIdAndUserId(id, userId);
         if (addressBook == null) {
-            throw new AddressBookBusinessException(MessageConstant.ADDRESS_NOT_FOUND);
+            throw new AddressBookBusinessException(MessageConstant.ADDRESS_BOOK_NOT_FOUND);
         }
         return readConvert.toVO(addressBook);
     }
@@ -80,7 +80,7 @@ public class AddressBookServiceImpl implements AddressBookService {
         // 先查询确认地址存在且属于当前用户
         AddressBook addressBook = addressBookMapper.getByIdAndUserId(dto.getId(), userId);
         if (addressBook == null) {
-            throw new AddressBookBusinessException(MessageConstant.ADDRESS_NOT_FOUND);
+            throw new AddressBookBusinessException(MessageConstant.ADDRESS_BOOK_NOT_FOUND);
         }
 
         // 合并更新
@@ -89,7 +89,7 @@ public class AddressBookServiceImpl implements AddressBookService {
 
         int rows = addressBookMapper.updateByIdAndUserId(addressBook);
         if (rows == 0) {
-            throw new AddressBookBusinessException(MessageConstant.ADDRESS_NOT_FOUND);
+            throw new AddressBookBusinessException(MessageConstant.ADDRESS_BOOK_NOT_FOUND);
         }
         log.info("更新地址成功，地址ID：{}", dto.getId());
     }
@@ -99,7 +99,7 @@ public class AddressBookServiceImpl implements AddressBookService {
         Long userId = BaseContext.getCurrentId();
         int rows = addressBookMapper.deleteByIdAndUserId(id, userId);
         if (rows == 0) {
-            throw new AddressBookBusinessException(MessageConstant.ADDRESS_NOT_FOUND);
+            throw new AddressBookBusinessException(MessageConstant.ADDRESS_BOOK_NOT_FOUND);
         }
         log.info("删除地址成功，地址ID：{}", id);
     }
@@ -115,7 +115,7 @@ public class AddressBookServiceImpl implements AddressBookService {
         // 2. 设置指定地址为默认
         int rows = addressBookMapper.setDefaultByIdAndUserId(id, userId);
         if (rows == 0) {
-            throw new AddressBookBusinessException(MessageConstant.ADDRESS_NOT_FOUND);
+            throw new AddressBookBusinessException(MessageConstant.ADDRESS_BOOK_NOT_FOUND);
         }
         log.info("设置默认地址成功，地址ID：{}", id);
     }
