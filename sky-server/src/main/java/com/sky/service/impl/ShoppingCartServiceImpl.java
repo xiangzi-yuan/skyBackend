@@ -3,6 +3,7 @@ package com.sky.service.impl;
 import com.sky.context.BaseContext;
 import com.sky.dto.ShoppingCartDTO;
 import com.sky.entity.ShoppingCart;
+import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealMapper;
 import com.sky.mapper.ShoppingCartMapper;
@@ -16,9 +17,12 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.sky.constant.MessageConstant.DISH_ID_AND_SETMEAL_ID_CANNOT_BOTH_BE_NULL;
+import static com.sky.constant.MessageConstant.SHOPPING_CART_ITEM_NOT_FOUND;
+
 
 @Service
 @Slf4j
@@ -80,7 +84,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
                 // 添加的是菜品
                 DishDetailRM dish = dishMapper.getDetailById(dto.getDishId());
                 if (dish == null) {
-                    throw new RuntimeException("菜品不存在或已删除");
+                    throw new ShoppingCartBusinessException(SHOPPING_CART_ITEM_NOT_FOUND);
                 }
                 shoppingCart.setName(dish.getName());
                 shoppingCart.setImage(dish.getImage());
@@ -90,17 +94,42 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
                 // 添加的是套餐
                 SetmealDetailRM setmeal = setmealMapper.getDetailById(dto.getSetmealId());
                 if (setmeal == null) {
-                    throw new RuntimeException("套餐不存在或已删除");
+                    throw new ShoppingCartBusinessException(SHOPPING_CART_ITEM_NOT_FOUND);
                 }
                 shoppingCart.setName(setmeal.getName());
                 shoppingCart.setImage(setmeal.getImage());
                 shoppingCart.setAmount(setmeal.getPrice());
                 log.info("添加套餐到购物车：{}", setmeal.getName());
             } else {
-                throw new RuntimeException("菜品ID和套餐ID不能同时为空");
+                throw new ShoppingCartBusinessException(DISH_ID_AND_SETMEAL_ID_CANNOT_BOTH_BE_NULL);
             }
 
             shoppingCartMapper.insert(shoppingCart);
+        }
+    }
+
+    @Override
+    public void sub(ShoppingCartDTO dto) {
+        Long userId = BaseContext.getCurrentId();
+        ShoppingCart shoppingCart = ShoppingCart.builder()
+                .userId(userId)
+                .dishId(dto.getDishId())
+                .setmealId(dto.getSetmealId())
+                .dishFlavor(dto.getDishFlavor())
+                .build();
+        ShoppingCart existingCart = shoppingCartMapper.getByUserAndItem(shoppingCart);
+        if (existingCart == null) {
+            // 不存在
+            throw new ShoppingCartBusinessException(SHOPPING_CART_ITEM_NOT_FOUND);
+        } else {
+            if (existingCart.getNumber() <= 1) {
+                shoppingCartMapper.deleteByIdAndUserId(existingCart.getId(), userId);
+            } else {
+                existingCart.setNumber(existingCart.getNumber() - 1);
+                shoppingCartMapper.updateNumberById(existingCart);
+                log.info("购物车商品数量-1，当前数量：{}", existingCart.getNumber());
+            }
+
         }
     }
 

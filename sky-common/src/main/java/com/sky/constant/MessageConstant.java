@@ -46,6 +46,9 @@ public class MessageConstant {
     public static final String DISH_NOT_FOUND_OR_UPDATE_FAILED = "菜品不存在或更新失败";
     public static final String SETMEAL_NOT_FOUND = "套餐不存在";
     public static final String SETMEAL_NOT_FOUND_OR_UPDATE_FAILED = "套餐不存在或更新失败";
+    public static final String SHOPPING_CART_ITEM_NOT_FOUND = "商品不存在或已删除";
+    public static final String DISH_ID_AND_SETMEAL_ID_CANNOT_BOTH_BE_NULL = "菜品ID和套餐ID不能同时为空";
+
 
     // ===== 密码相关 =====
     public static final String OLD_NEW_PASSWORD_REQUIRED = "oldPassword/newPassword is required";

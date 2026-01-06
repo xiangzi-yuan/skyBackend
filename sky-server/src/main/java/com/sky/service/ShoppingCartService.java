@@ -10,4 +10,6 @@ public interface ShoppingCartService {
     List<ShoppingCartVO> list();
 
     void add(ShoppingCartDTO dto);
+
+    void sub(ShoppingCartDTO dto);
 }
