@@ -24,14 +24,14 @@ public class ShoppingCartController {
 
     @GetMapping("/list")
     @ApiOperation("查看购物车")
-    public Result<List<ShoppingCartVO>> list(){
+    public Result<List<ShoppingCartVO>> list() {
         log.info("查看购物车");
         return Result.success(shoppingCartService.list());
     }
 
-    @GetMapping("/add")
+    @PostMapping("/add")
     @ApiOperation("新增商品到购物车")
-    public Result<String> add(@RequestBody ShoppingCartDTO dto){
+    public Result<String> add(@RequestBody ShoppingCartDTO dto) {
         log.info("新增商品到购物车");
         shoppingCartService.add(dto);
         return Result.success();

@@ -2,29 +2,39 @@ package com.sky.service.impl;
 
 import com.sky.context.BaseContext;
 import com.sky.dto.ShoppingCartDTO;
+import com.sky.entity.ShoppingCart;
+import com.sky.mapper.DishMapper;
+import com.sky.mapper.SetmealMapper;
 import com.sky.mapper.ShoppingCartMapper;
-import com.sky.readmodel.dish.DishItemRM;
+import com.sky.readmodel.dish.DishDetailRM;
+import com.sky.readmodel.setmeal.SetmealDetailRM;
 import com.sky.service.ShoppingCartService;
 import com.sky.vo.ShoppingCartRM;
 import com.sky.vo.ShoppingCartVO;
-import com.sky.vo.dish.DishItemVO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class ShoppingCartServiceImpl implements ShoppingCartService {
 
     @Autowired
     ShoppingCartMapper shoppingCartMapper;
+    @Autowired
+    private DishMapper dishMapper;
+    @Autowired
+    private SetmealMapper setmealMapper;
 
     @Override
     public List<ShoppingCartVO> list() {
         Long userId = BaseContext.getCurrentId();
-        List<ShoppingCartRM> rmList = shoppingCartMapper.listByUserId(userId); // 先按你现在的写法
+        List<ShoppingCartRM> rmList = shoppingCartMapper.listByUserId(userId);
         return rmList.stream()
                 .map(rm -> {
                     ShoppingCartVO vo = new ShoppingCartVO();
@@ -34,12 +44,64 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 添加购物车
+     * 业务逻辑：
+     * 1. 判断当前请求的商品（菜品+口味 或 套餐）是否已在购物车中
+     * 2. 如果已存在，数量+1
+     * 3. 如果不存在，新增一条购物车记录
+     */
     @Override
     public void add(ShoppingCartDTO dto) {
         Long userId = BaseContext.getCurrentId();
 
+        // 构建查询条件
+        ShoppingCart shoppingCart = ShoppingCart.builder()
+                .userId(userId)
+                .dishId(dto.getDishId())
+                .setmealId(dto.getSetmealId())
+                .dishFlavor(dto.getDishFlavor())
+                .build();
 
+        // 1. 查询当前商品是否已在购物车中
+        ShoppingCart existingCart = shoppingCartMapper.getByUserAndItem(shoppingCart);
+
+        if (existingCart != null) {
+            // 2. 已存在：数量+1
+            existingCart.setNumber(existingCart.getNumber() + 1);
+            shoppingCartMapper.updateNumberById(existingCart);
+            log.info("购物车商品数量+1，当前数量：{}", existingCart.getNumber());
+        } else {
+            // 3. 不存在：新增购物车记录
+            shoppingCart.setNumber(1);
+            shoppingCart.setCreateTime(LocalDateTime.now());
+
+            if (dto.getDishId() != null) {
+                // 添加的是菜品
+                DishDetailRM dish = dishMapper.getDetailById(dto.getDishId());
+                if (dish == null) {
+                    throw new RuntimeException("菜品不存在或已删除");
+                }
+                shoppingCart.setName(dish.getName());
+                shoppingCart.setImage(dish.getImage());
+                shoppingCart.setAmount(dish.getPrice());
+                log.info("添加菜品到购物车：{}", dish.getName());
+            } else if (dto.getSetmealId() != null) {
+                // 添加的是套餐
+                SetmealDetailRM setmeal = setmealMapper.getDetailById(dto.getSetmealId());
+                if (setmeal == null) {
+                    throw new RuntimeException("套餐不存在或已删除");
+                }
+                shoppingCart.setName(setmeal.getName());
+                shoppingCart.setImage(setmeal.getImage());
+                shoppingCart.setAmount(setmeal.getPrice());
+                log.info("添加套餐到购物车：{}", setmeal.getName());
+            } else {
+                throw new RuntimeException("菜品ID和套餐ID不能同时为空");
+            }
+
+            shoppingCartMapper.insert(shoppingCart);
+        }
     }
-
 
 }
