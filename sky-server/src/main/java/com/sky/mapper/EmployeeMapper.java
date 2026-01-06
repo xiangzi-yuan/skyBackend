@@ -5,11 +5,7 @@ import com.sky.annotation.AutoFill;
 import com.sky.dto.employee.EmployeePageQueryDTO;
 import com.sky.entity.Employee;
 import com.sky.enumeration.OperationType;
-import com.sky.readmodel.employee.EmployeeAuthInfo;
-import com.sky.readmodel.employee.EmployeeDetailRM;
-import com.sky.readmodel.employee.EmployeeLoginRM;
-import com.sky.readmodel.employee.EmployeePageRM;
-import com.sky.readmodel.employee.EmployeeRoleRM;
+import com.sky.readmodel.employee.*;
 import org.apache.ibatis.annotations.*;
 
 import java.time.LocalDateTime;

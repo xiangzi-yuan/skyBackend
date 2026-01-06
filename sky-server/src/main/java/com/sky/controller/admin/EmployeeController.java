@@ -2,11 +2,7 @@ package com.sky.controller.admin;
 
 import com.sky.constant.MessageConstant;
 import com.sky.dto.PasswordEditDTO;
-import com.sky.dto.employee.EmployeeCreateDTO;
-import com.sky.dto.employee.EmployeeLoginDTO;
-import com.sky.dto.employee.EmployeePageQueryDTO;
-import com.sky.dto.employee.EmployeeRoleUpgradeDTO;
-import com.sky.dto.employee.EmployeeUpdateDTO;
+import com.sky.dto.employee.*;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.EmployeeService;

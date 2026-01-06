@@ -49,6 +49,9 @@ public class MessageConstant {
     public static final String SHOPPING_CART_ITEM_NOT_FOUND = "商品不存在或已删除";
     public static final String DISH_ID_AND_SETMEAL_ID_CANNOT_BOTH_BE_NULL = "菜品ID和套餐ID不能同时为空";
 
+    // ===== 地址相关 =====
+    public static final String ADDRESS_NOT_FOUND = "地址不存在";
+    public static final String DEFAULT_ADDRESS_NOT_FOUND = "默认地址不存在";
 
     // ===== 密码相关 =====
     public static final String OLD_NEW_PASSWORD_REQUIRED = "oldPassword/newPassword is required";

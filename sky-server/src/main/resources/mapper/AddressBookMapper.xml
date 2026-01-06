@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sky.mapper.AddressBookMapper">
+
+    <!-- 新增地址 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO address_book (
+            user_id, consignee, phone, sex,
+            province_code, province_name, city_code, city_name,
+            district_code, district_name, detail, label, is_default
+        ) VALUES (
+            #{userId}, #{consignee}, #{phone}, #{sex},
+            #{provinceCode}, #{provinceName}, #{cityCode}, #{cityName},
+            #{districtCode}, #{districtName}, #{detail}, #{label}, #{isDefault}
+        )
+    </insert>
+
+    <!-- 查询用户所有地址 -->
+    <select id="listByUserId" resultType="com.sky.entity.AddressBook">
+        SELECT * FROM address_book WHERE user_id = #{userId} ORDER BY is_default DESC, id DESC
+    </select>
+
+    <!-- 根据 id 和 userId 查询 -->
+    <select id="getByIdAndUserId" resultType="com.sky.entity.AddressBook">
+        SELECT * FROM address_book WHERE id = #{id} AND user_id = #{userId}
+    </select>
+
+    <!-- 查询用户默认地址 -->
+    <select id="getDefaultByUserId" resultType="com.sky.entity.AddressBook">
+        SELECT * FROM address_book WHERE user_id = #{userId} AND is_default = 1 LIMIT 1
+    </select>
+
+    <!-- 更新地址（必须包含 userId 条件） -->
+    <update id="updateByIdAndUserId">
+        UPDATE address_book
+        <set>
+            <if test="consignee != null">consignee = #{consignee},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="sex != null">sex = #{sex},</if>
+            <if test="provinceCode != null">province_code = #{provinceCode},</if>
+            <if test="provinceName != null">province_name = #{provinceName},</if>
+            <if test="cityCode != null">city_code = #{cityCode},</if>
+            <if test="cityName != null">city_name = #{cityName},</if>
+            <if test="districtCode != null">district_code = #{districtCode},</if>
+            <if test="districtName != null">district_name = #{districtName},</if>
+            <if test="detail != null">detail = #{detail},</if>
+            <if test="label != null">label = #{label},</if>
+        </set>
+        WHERE id = #{id} AND user_id = #{userId}
+    </update>
+
+    <!-- 删除地址（必须包含 userId 条件） -->
+    <delete id="deleteByIdAndUserId">
+        DELETE FROM address_book WHERE id = #{id} AND user_id = #{userId}
+    </delete>
+
+    <!-- 清除用户所有默认地址标记 -->
+    <update id="clearDefaultByUserId">
+        UPDATE address_book SET is_default = 0 WHERE user_id = #{userId}
+    </update>
+
+    <!-- 设置指定地址为默认 -->
+    <update id="setDefaultByIdAndUserId">
+        UPDATE address_book SET is_default = 1 WHERE id = #{id} AND user_id = #{userId}
+    </update>
+
+</mapper>
