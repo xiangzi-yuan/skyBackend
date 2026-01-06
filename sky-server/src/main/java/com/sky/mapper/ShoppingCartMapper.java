@@ -44,4 +44,6 @@ public interface ShoppingCartMapper {
     @Delete("delete from shopping_cart where id = #{id} and user_id = #{userId}")
     int deleteByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
 
+    @Delete("delete from shopping_cart where user_id = #{userId}")
+    void clean(Long userId);
 }
