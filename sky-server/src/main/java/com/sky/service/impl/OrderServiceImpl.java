@@ -167,6 +167,21 @@ public class OrderServiceImpl implements OrderService {
 
         // 根据订单号查询订单
         Orders ordersDB = orderMapper.getByNumber(outTradeNo);
+        if (ordersDB == null) {
+            log.warn("支付回调订单不存在，订单号: {}", outTradeNo);
+            throw new OrderBusinessException(ORDER_NOT_FOUND);
+        }
+
+        if (PAID.equals(ordersDB.getPayStatus())) {
+            log.info("订单已支付，幂等处理跳过，订单号: {}", outTradeNo);
+            return;
+        }
+
+        Integer status = ordersDB.getStatus();
+        if (!PENDING_PAYMENT.equals(status) && !TO_BE_CONFIRMED.equals(status)) {
+            log.warn("支付回调订单状态异常，订单号: {}，当前状态: {}", outTradeNo, status);
+            return;
+        }
 
         // 根据订单id更新订单的状态、支付方式、支付状态、结账时间
         Orders orders = Orders.builder()
