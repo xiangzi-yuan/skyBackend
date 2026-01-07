@@ -14,7 +14,6 @@ import com.sky.service.ShoppingCartService;
 import com.sky.vo.ShoppingCartVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,19 +21,16 @@ import java.util.stream.Collectors;
 
 import static com.sky.constant.MessageConstant.DISH_ID_AND_SETMEAL_ID_CANNOT_BOTH_BE_NULL;
 import static com.sky.constant.MessageConstant.SHOPPING_CART_ITEM_NOT_FOUND;
+import lombok.RequiredArgsConstructor;
 
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ShoppingCartServiceImpl implements ShoppingCartService {
 
-    @Autowired
-    ShoppingCartMapper shoppingCartMapper;
-    @Autowired
-    private DishMapper dishMapper;
-    @Autowired
-    private SetmealMapper setmealMapper;
-
+    private final ShoppingCartMapper shoppingCartMapper;
+    private final DishMapper dishMapper;    private final SetmealMapper setmealMapper;
     @Override
     public List<ShoppingCartVO> list() {
         Long userId = BaseContext.getCurrentId();

@@ -9,22 +9,17 @@ import com.sky.readmodel.setmeal.SetmealDetailRM;
 import com.sky.vo.setmeal.SetmealDetailVO;
 import com.sky.vo.setmeal.SetmealDishVO;
 import com.sky.vo.setmeal.SetmealListVO;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class SetmealCacheDelegate {
 
-    @Autowired
-    private SetmealMapper setmealMapper;
-    @Autowired
-    private SetmealDishMapper setmealDishMapper;
-    @Autowired
-    private SetmealReadConvert setmealReadConvert;
-
+    private final SetmealMapper setmealMapper;    private final SetmealDishMapper setmealDishMapper;    private final SetmealReadConvert setmealReadConvert;
     /**
      * 用户端：按分类查询上架套餐列表（版本号 key）。
      */

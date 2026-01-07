@@ -21,7 +21,6 @@ import com.sky.role.RoleLevel;
 import com.sky.service.EmployeeService;
 import com.sky.utils.JwtUtil;
 import com.sky.vo.employee.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -31,25 +30,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class EmployeeServiceImpl implements EmployeeService {
 
-    @Autowired
-    private EmployeeMapper employeeMapper;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtProperties jwtProperties;
-
-    @Autowired
-    private EmployeeReadConvert employeeReadConvert;
-
-    @Autowired
-    private EmployeeWriteConvert employeeWriteConvert;
-
+    private final EmployeeMapper employeeMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtProperties jwtProperties;
+    private final EmployeeReadConvert employeeReadConvert;
+    private final EmployeeWriteConvert employeeWriteConvert;
     /**
      * 登录：Service 直接返回 VO（Controller 变薄）
      */

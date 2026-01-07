@@ -5,20 +5,19 @@ import com.sky.service.DishService;
 import com.sky.vo.dish.DishDetailVO;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @RestController("userDishController")
 @RequestMapping("/user/dish")
 @Slf4j
 @Validated
+@RequiredArgsConstructor
 public class DishController {
-    @Autowired
-    private DishService dishService;
-
+    private final DishService dishService;
 
     @GetMapping("/{id}")
     @ApiOperation("根据ID查询菜品详情")

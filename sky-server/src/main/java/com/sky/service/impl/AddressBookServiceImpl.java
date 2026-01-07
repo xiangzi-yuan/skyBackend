@@ -12,28 +12,23 @@ import com.sky.mapper.AddressBookMapper;
 import com.sky.service.AddressBookService;
 import com.sky.vo.addressbook.AddressBookVO;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 地址簿服务实现
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class AddressBookServiceImpl implements AddressBookService {
 
-    @Autowired
-    private AddressBookMapper addressBookMapper;
-
-    @Autowired
-    private AddressBookWriteConvert writeConvert;
-
-    @Autowired
-    private AddressBookReadConvert readConvert;
-
+    private final AddressBookMapper addressBookMapper;
+    private final AddressBookWriteConvert writeConvert;
+    private final AddressBookReadConvert readConvert;
     @Override
     public void add(AddressBookCreateDTO dto) {
         Long userId = BaseContext.getCurrentId();

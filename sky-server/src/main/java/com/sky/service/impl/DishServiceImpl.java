@@ -25,7 +25,6 @@ import com.sky.service.VersionService;
 import com.sky.service.cache.DishCacheDelegate;
 import com.sky.vo.dish.DishDetailVO;
 import com.sky.vo.dish.DishPageVO;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
@@ -38,27 +37,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class DishServiceImpl implements DishService {
 
-    @Autowired
-    private DishWriteConvert dishWriteConvert;
-    @Autowired
-    private DishMapper dishMapper;
-    @Autowired
-    private DishFlavorMapper dishFlavorMapper;
-    @Autowired
-    private DishReadConvert dishReadConvert;
-    @Autowired
-    private SetmealDishMapper setmealDishMapper;
-    @Autowired
-    private VersionService versionService;
-    @Autowired
-    private DishCacheDelegate dishCacheDelegate;
-    @Autowired
-    private CacheManager cacheManager;
-
+    private final DishWriteConvert dishWriteConvert;    private final DishMapper dishMapper;    private final DishFlavorMapper dishFlavorMapper;    private final DishReadConvert dishReadConvert;    private final SetmealDishMapper setmealDishMapper;    private final VersionService versionService;    private final DishCacheDelegate dishCacheDelegate;    private final CacheManager cacheManager;
     private static final String DISH_LIST_VER_KEY_PREFIX = "dish:list:ver:";
     private static final String DISH_DETAIL_CACHE_NAME = "dishDetailCache";
 

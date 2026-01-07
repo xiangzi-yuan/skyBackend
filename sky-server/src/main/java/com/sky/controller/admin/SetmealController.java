@@ -10,7 +10,6 @@ import com.sky.service.SetmealService;
 import com.sky.vo.setmeal.SetmealDetailVO;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,15 +18,15 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @RestController("adminSetmealController")
 @RequestMapping("/admin/setmeal")
 @Slf4j
 @Validated
+@RequiredArgsConstructor
 public class SetmealController {
-    @Autowired
-    private SetmealService setmealService;
-
+    private final SetmealService setmealService;
     @PostMapping
     @ApiOperation("新增套餐")
     public Result<String> saveSetmeal(@Valid @RequestBody SetmealCreateDTO dto) {

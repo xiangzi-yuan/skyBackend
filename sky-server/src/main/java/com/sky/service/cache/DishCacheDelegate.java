@@ -9,7 +9,6 @@ import com.sky.mapper.DishMapper;
 import com.sky.readmodel.dish.DishDetailRM;
 import com.sky.vo.dish.DishDetailVO;
 import com.sky.vo.dish.DishFlavorVO;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -17,17 +16,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class DishCacheDelegate {
 
-    @Autowired
-    private DishMapper dishMapper;
-    @Autowired
-    private DishFlavorMapper dishFlavorMapper;
-    @Autowired
-    private DishReadConvert dishReadConvert;
-
+    private final DishMapper dishMapper;    private final DishFlavorMapper dishFlavorMapper;    private final DishReadConvert dishReadConvert;
     /**
      * 用户端：按分类查询上架菜品列表（版本号 key）。
      */

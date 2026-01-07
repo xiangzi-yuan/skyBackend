@@ -7,19 +7,19 @@ import com.sky.vo.ShoppingCartVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/user/shoppingCart")
 @Api("购物车相关接口")
 @Slf4j
+@RequiredArgsConstructor
 public class ShoppingCartController {
 
-    @Autowired
-    ShoppingCartService shoppingCartService;
+    private final ShoppingCartService shoppingCartService;
 
     @GetMapping("/list")
     @ApiOperation("查看购物车")

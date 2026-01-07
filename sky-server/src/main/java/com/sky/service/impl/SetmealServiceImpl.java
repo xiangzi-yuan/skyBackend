@@ -26,7 +26,6 @@ import com.sky.vo.setmeal.SetmealDetailVO;
 import com.sky.vo.setmeal.SetmealListVO;
 import com.sky.vo.setmeal.SetmealPageVO;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
@@ -38,23 +37,18 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class SetmealServiceImpl implements SetmealService {
-    @Autowired
-    SetmealWriteConvert setmealWriteConvert;
-    @Autowired
-    SetmealMapper setmealMapper;
-    @Autowired
-    SetmealDishMapper setmealDishMapper;
-    @Autowired
-    SetmealReadConvert setmealReadConvert;
-    @Autowired
-    VersionService versionService;
-    @Autowired
-    SetmealCacheDelegate setmealCacheDelegate;
-    @Autowired
-    CacheManager cacheManager;
+    private final SetmealWriteConvert setmealWriteConvert;
+    private final SetmealMapper setmealMapper;
+    private final SetmealDishMapper setmealDishMapper;
+    private final SetmealReadConvert setmealReadConvert;
+    private final VersionService versionService;
+    private final SetmealCacheDelegate setmealCacheDelegate;
+    private final CacheManager cacheManager;
 
     private static final String SETMEAL_LIST_VER_KEY_PREFIX = "setmeal:list:ver:";
     private static final String SETMEAL_DETAIL_CACHE_NAME = "setmealDetailCache";

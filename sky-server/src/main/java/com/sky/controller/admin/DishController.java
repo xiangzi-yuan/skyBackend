@@ -10,7 +10,6 @@ import com.sky.service.DishService;
 import com.sky.vo.dish.DishDetailVO;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,15 +18,15 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @RestController("adminDishController")
 @RequestMapping("/admin/dish")
 @Slf4j
 @Validated
+@RequiredArgsConstructor
 public class DishController {
-    @Autowired
-    private DishService dishService;
-
+    private final DishService dishService;
 
     @PostMapping
     @ApiOperation("新增菜品")

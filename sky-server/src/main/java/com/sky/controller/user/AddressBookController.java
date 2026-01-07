@@ -8,11 +8,11 @@ import com.sky.vo.addressbook.AddressBookVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 /**
  * C端-地址簿接口
@@ -21,11 +21,10 @@ import java.util.List;
 @RequestMapping("/user/addressBook")
 @Api(tags = "C端-地址簿接口")
 @Slf4j
+@RequiredArgsConstructor
 public class AddressBookController {
 
-    @Autowired
-    private AddressBookService addressBookService;
-
+    private final AddressBookService addressBookService;
     /**
      * 新增地址
      */

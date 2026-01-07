@@ -17,7 +17,6 @@ import com.sky.util.OrderAmountCalculator;
 import com.sky.util.OrderNumberUtil;
 import com.sky.vo.OrderSubmitVO;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,29 +27,19 @@ import java.util.List;
 import static com.sky.constant.MessageConstant.*;
 import static com.sky.constant.OrderStatusConstant.PENDING_PAYMENT;
 import static com.sky.constant.PayStatusConstant.UN_PAID;
+import lombok.RequiredArgsConstructor;
 
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
-    @Autowired
-    private ShoppingCartMapper shoppingCartMapper;
-
-    @Autowired
-    private UserMapper userMapper;
-
-    @Autowired
-    private AddressBookMapper addressBookMapper;
-
-    @Autowired
-    private OrderWriteConvert orderWriteConvert;
-
-    @Autowired
-    private OrderMapper orderMapper;
-    @Autowired
-    private OrderDetailMapper orderDetailMapper;
-
+    private final ShoppingCartMapper shoppingCartMapper;
+    private final UserMapper userMapper;
+    private final AddressBookMapper addressBookMapper;
+    private final OrderWriteConvert orderWriteConvert;
+    private final OrderMapper orderMapper;    private final OrderDetailMapper orderDetailMapper;
     @Transactional
     @Override
     public OrderSubmitVO submit(OrdersSubmitDTO dto) {

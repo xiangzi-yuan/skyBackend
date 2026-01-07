@@ -7,20 +7,19 @@ import com.sky.vo.setmeal.SetmealDetailVO;
 import com.sky.vo.setmeal.SetmealListVO;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @RestController("userSetmealController")
 @RequestMapping("/user/setmeal")
 @Slf4j
 @Validated
+@RequiredArgsConstructor
 public class SetmealController {
-    @Autowired
-    private SetmealService setmealService;
-
+    private final SetmealService setmealService;
 
     @GetMapping("/{id}")
     @ApiOperation("根据ID查询套餐详情")

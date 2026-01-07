@@ -15,29 +15,23 @@ import com.sky.utils.HttpClientUtil;
 import com.sky.utils.JwtUtil;
 import com.sky.vo.user.UserLoginVO;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     public static final String WX_LOGIN = "https://api.weixin.qq.com/sns/jscode2session";
-    @Autowired
-    private JwtProperties jwtProperties;
+    private final JwtProperties jwtProperties;
+    private final WeChatProperties weChatProperties;
 
-    @Autowired
-    WeChatProperties weChatProperties;
-
-    @Autowired
-    private UserMapper userMapper;
-
-    @Autowired
-    private UserReadConvert userReadConvert;
-
+    private final UserMapper userMapper;
+    private final UserReadConvert userReadConvert;
     /**
      * 微信登陆
      *

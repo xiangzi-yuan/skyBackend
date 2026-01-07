@@ -21,30 +21,21 @@ import com.sky.service.CategoryService;
 import com.sky.vo.category.CategoryDetailVO;
 import com.sky.vo.category.CategorySimpleVO;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 分类业务层实现
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
 
-    @Autowired
-    private CategoryMapper categoryMapper;
-    @Autowired
-    private DishMapper dishMapper;
-    @Autowired
-    private SetmealMapper setmealMapper;
-    @Autowired
-    private CategoryWriteConvert categoryWriteConvert;
-    @Autowired
-    private CategoryReadConvert categoryReadConvert;
-
+    private final CategoryMapper categoryMapper;    private final DishMapper dishMapper;    private final SetmealMapper setmealMapper;    private final CategoryWriteConvert categoryWriteConvert;    private final CategoryReadConvert categoryReadConvert;
     /**
      * 新增分类
      * @param dto 新增分类DTO
