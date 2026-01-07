@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -222,25 +221,68 @@ public class ReportServiceImpl implements ReportService {
                 LocalDateTime.of(dateBegin, LocalTime.MIN),
                 LocalDateTime.of(dateEnd, LocalTime.MAX));
 
-        // 读取Excel模板
-        InputStream is = this.getClass().getClassLoader().getResourceAsStream("template/运营数据报表模板.xlsx");
-
         try {
-            // 基于模板创建Excel
-            XSSFWorkbook excel = new XSSFWorkbook(is);
-            XSSFSheet sheet = excel.getSheet("Sheet1");
+            // 设置响应头
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            String fileName = "运营数据报表_" + dateBegin + "_" + dateEnd + ".xlsx";
+            response.setHeader("Content-Disposition", "attachment; filename=" +
+                    java.net.URLEncoder.encode(fileName, "UTF-8"));
 
-            // 填充概览数据
-            sheet.getRow(1).getCell(1).setCellValue("时间：" + dateBegin + " 至 " + dateEnd);
+            // 动态创建Excel工作簿
+            XSSFWorkbook excel = new XSSFWorkbook();
+            XSSFSheet sheet = excel.createSheet("运营数据报表");
 
-            XSSFRow row3 = sheet.getRow(3);
-            row3.getCell(2).setCellValue(businessData.getTurnover());
-            row3.getCell(4).setCellValue(businessData.getOrderCompletionRate());
-            row3.getCell(6).setCellValue(businessData.getNewUsers());
+            // 设置列宽
+            sheet.setColumnWidth(0, 5000);
+            sheet.setColumnWidth(1, 4000);
+            sheet.setColumnWidth(2, 4000);
+            sheet.setColumnWidth(3, 4000);
+            sheet.setColumnWidth(4, 4000);
+            sheet.setColumnWidth(5, 4000);
+            sheet.setColumnWidth(6, 4000);
 
-            XSSFRow row4 = sheet.getRow(4);
-            row4.getCell(2).setCellValue(businessData.getValidOrderCount());
-            row4.getCell(4).setCellValue(businessData.getUnitPrice());
+            // 创建标题行
+            XSSFRow row0 = sheet.createRow(0);
+            row0.createCell(0).setCellValue("运营数据报表");
+
+            // 时间范围行
+            XSSFRow row1 = sheet.createRow(1);
+            row1.createCell(0).setCellValue("时间：" + dateBegin + " 至 " + dateEnd);
+
+            // 概览标题行
+            XSSFRow row2 = sheet.createRow(2);
+            row2.createCell(0).setCellValue("【数据概览】");
+
+            // 概览数据 - 第一行
+            XSSFRow row3 = sheet.createRow(3);
+            row3.createCell(0).setCellValue("营业额");
+            row3.createCell(1).setCellValue(businessData.getTurnover() != null ? businessData.getTurnover() : 0);
+            row3.createCell(2).setCellValue("订单完成率");
+            row3.createCell(3).setCellValue(
+                    businessData.getOrderCompletionRate() != null ? businessData.getOrderCompletionRate() : 0);
+            row3.createCell(4).setCellValue("新增用户数");
+            row3.createCell(5).setCellValue(businessData.getNewUsers() != null ? businessData.getNewUsers() : 0);
+
+            // 概览数据 - 第二行
+            XSSFRow row4 = sheet.createRow(4);
+            row4.createCell(0).setCellValue("有效订单数");
+            row4.createCell(1)
+                    .setCellValue(businessData.getValidOrderCount() != null ? businessData.getValidOrderCount() : 0);
+            row4.createCell(2).setCellValue("平均客单价");
+            row4.createCell(3).setCellValue(businessData.getUnitPrice() != null ? businessData.getUnitPrice() : 0);
+
+            // 明细数据标题
+            XSSFRow row6 = sheet.createRow(6);
+            row6.createCell(0).setCellValue("【明细数据】");
+
+            // 明细表头
+            XSSFRow row7 = sheet.createRow(7);
+            row7.createCell(0).setCellValue("日期");
+            row7.createCell(1).setCellValue("营业额");
+            row7.createCell(2).setCellValue("有效订单");
+            row7.createCell(3).setCellValue("订单完成率");
+            row7.createCell(4).setCellValue("平均客单价");
+            row7.createCell(5).setCellValue("新增用户数");
 
             // 填充明细数据
             for (int i = 0; i < 30; i++) {
@@ -249,13 +291,14 @@ public class ReportServiceImpl implements ReportService {
                         LocalDateTime.of(date, LocalTime.MIN),
                         LocalDateTime.of(date, LocalTime.MAX));
 
-                XSSFRow row = sheet.getRow(7 + i);
-                row.getCell(1).setCellValue(date.toString());
-                row.getCell(2).setCellValue(dayData.getTurnover());
-                row.getCell(3).setCellValue(dayData.getValidOrderCount());
-                row.getCell(4).setCellValue(dayData.getOrderCompletionRate());
-                row.getCell(5).setCellValue(dayData.getUnitPrice());
-                row.getCell(6).setCellValue(dayData.getNewUsers());
+                XSSFRow row = sheet.createRow(8 + i);
+                row.createCell(0).setCellValue(date.toString());
+                row.createCell(1).setCellValue(dayData.getTurnover() != null ? dayData.getTurnover() : 0);
+                row.createCell(2).setCellValue(dayData.getValidOrderCount() != null ? dayData.getValidOrderCount() : 0);
+                row.createCell(3)
+                        .setCellValue(dayData.getOrderCompletionRate() != null ? dayData.getOrderCompletionRate() : 0);
+                row.createCell(4).setCellValue(dayData.getUnitPrice() != null ? dayData.getUnitPrice() : 0);
+                row.createCell(5).setCellValue(dayData.getNewUsers() != null ? dayData.getNewUsers() : 0);
             }
 
             // 输出Excel到响应
@@ -263,11 +306,13 @@ public class ReportServiceImpl implements ReportService {
             excel.write(out);
 
             // 关闭资源
+            out.flush();
             out.close();
             excel.close();
 
         } catch (IOException e) {
             log.error("导出Excel报表失败", e);
+            throw new RuntimeException("导出报表失败: " + e.getMessage());
         }
     }
 }
