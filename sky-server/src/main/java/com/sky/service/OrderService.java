@@ -10,5 +10,16 @@ public interface OrderService {
 
     OrderSubmitVO submit(OrdersSubmitDTO dto);
 
-    OrderPaymentVO payment(OrdersPaymentDTO dto);
+    /**
+     * 订单支付
+     * @param ordersPaymentDTO
+     * @return
+     */
+    OrderPaymentVO payment(OrdersPaymentDTO ordersPaymentDTO) throws Exception;
+
+    /**
+     * 支付成功，修改订单状态
+     * @param outTradeNo
+     */
+    void paySuccess(String outTradeNo);
 }

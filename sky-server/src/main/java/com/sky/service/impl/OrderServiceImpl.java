@@ -37,7 +37,6 @@ import static com.sky.constant.PayStatusConstant.PAID;
 import static com.sky.constant.PayStatusConstant.UN_PAID;
 import lombok.RequiredArgsConstructor;
 
-
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -60,14 +59,13 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderSubmitVO submit(OrdersSubmitDTO dto) {
 
-
         Long userId = BaseContext.getCurrentId();
         List<ShoppingCartRM> cartItems = shoppingCartMapper.listByUserId(userId); // 查询购物车快照
         if (cartItems == null || cartItems.isEmpty()) {
             throw new ShoppingCartBusinessException(SHOPPING_CART_IS_NULL);
         }
 
-        //计算金额
+        // 计算金额
         BigDecimal calculatedAmount = OrderAmountCalculator.calcTotalAmount(cartItems);
 
         // 补全order
@@ -109,8 +107,7 @@ public class OrderServiceImpl implements OrderService {
                         .number(cartItem.getNumber())
                         .amount(cartItem.getAmount())
                         .image(cartItem.getImage())
-                        .build()
-                ))
+                        .build()))
                 .toList();
         orderDetailMapper.insertBatch(details);
         // 清空购物车
@@ -124,77 +121,44 @@ public class OrderServiceImpl implements OrderService {
                 .build();
     }
 
-    @Transactional
-    @Override
-    public OrderPaymentVO payment(OrdersPaymentDTO dto) {
-        if (dto == null || dto.getOrderNumber() == null || dto.getOrderNumber().isBlank()) {
-            throw new OrderBusinessException(ORDER_NOT_FOUND);
-        }
+    /**
+     * 订单支付
+     *
+     * @param ordersPaymentDTO
+     * @return
+     */
+    public OrderPaymentVO payment(OrdersPaymentDTO ordersPaymentDTO) throws Exception {
+        // 【模拟支付】直接更新订单状态为已支付
+        paySuccess(ordersPaymentDTO.getOrderNumber());
 
-        Orders order = orderMapper.getByNumber(dto.getOrderNumber());
-        if (order == null) {
-            throw new OrderBusinessException(ORDER_NOT_FOUND);
-        }
-        if (!PENDING_PAYMENT.equals(order.getStatus())) {
-            throw new OrderBusinessException(ORDER_STATUS_ERROR);
-        }
-        if (dto.getPayMethod() != null && dto.getPayMethod() != 1) {
-            throw new OrderBusinessException(PAY_METHOD_INVALID);
-        }
-
-        OrderPaymentVO paymentVO = buildMockPaymentVO(order.getNumber());
-
-        /*
-        // Real WeChat pay (requires valid sky.wechat.* config).
-        User user = userMapper.getById(order.getUserId());
-        if (user == null) {
-            throw new UserNotFoundException(USER_NOT_FOUND);
-        }
-        JSONObject json = weChatPayUtil.pay(
-                order.getNumber(),
-                order.getAmount(),
-                "Sky Takeout Order",
-                user.getOpenid()
-        );
-        paymentVO = OrderPaymentVO.builder()
-                .timeStamp(json.getString("timeStamp"))
-                .nonceStr(json.getString("nonceStr"))
-                .packageStr(json.getString("package"))
-                .signType(json.getString("signType"))
-                .paySign(json.getString("paySign"))
-                .build();
-        */
-
-        markPaid(order.getNumber());
-
-        return paymentVO;
-    }
-
-    private void markPaid(String orderNumber) {
-        orderMapper.updateStatusByNumber(TO_BE_CONFIRMED, PAID, LocalDateTime.now(), orderNumber);
-    }
-
-    private OrderPaymentVO buildMockPaymentVO(String orderNumber) {
-        String appid = defaultIfBlank(weChatProperties.getAppid(), "wx-mock-appid");
-        String mchId = defaultIfBlank(weChatProperties.getMchid(), "1900000001");
-        String nonceStr = UUID.randomUUID().toString().replace("-", "");
-        String timeStamp = String.valueOf(System.currentTimeMillis() / 1000);
-        String packageStr = "prepay_id=mock_" + orderNumber;
-        String signType = "RSA";
-        String paySign = "MOCK_SIGN_" + appid + "_" + mchId;
+        // 【模拟支付】返回模拟的预支付数据
         return OrderPaymentVO.builder()
-                .nonceStr(nonceStr)
-                .paySign(paySign)
-                .timeStamp(timeStamp)
-                .signType(signType)
-                .packageStr(packageStr)
+                .nonceStr("mock_nonce_" + System.currentTimeMillis())
+                .paySign("mock_pay_sign")
+                .timeStamp(String.valueOf(System.currentTimeMillis() / 1000))
+                .signType("RSA")
+                .packageStr("prepay_id=mock_prepay_id")
                 .build();
     }
 
-    private String defaultIfBlank(String value, String fallback) {
-        if (value == null || value.isBlank()) {
-            return fallback;
-        }
-        return value;
+    /**
+     * 支付成功，修改订单状态
+     *
+     * @param outTradeNo
+     */
+    public void paySuccess(String outTradeNo) {
+
+        // 根据订单号查询订单
+        Orders ordersDB = orderMapper.getByNumber(outTradeNo);
+
+        // 根据订单id更新订单的状态、支付方式、支付状态、结账时间
+        Orders orders = Orders.builder()
+                .id(ordersDB.getId())
+                .status(TO_BE_CONFIRMED)
+                .payStatus(PAID)
+                .checkoutTime(LocalDateTime.now())
+                .build();
+
+        orderMapper.update(orders);
     }
 }

@@ -17,15 +17,11 @@ public interface OrderMapper {
     @Select("select * from orders where number = #{orderNumber} limit 1")
     Orders getByNumber(@Param("orderNumber") String orderNumber);
 
-    @Update("""
-            update orders
-            set status = #{status},
-                pay_status = #{payStatus},
-                checkout_time = #{checkoutTime}
-            where number = #{orderNumber}
-            """)
-    void updateStatusByNumber(@Param("status") Integer status,
-                              @Param("payStatus") Integer payStatus,
-                              @Param("checkoutTime") LocalDateTime checkoutTime,
-                              @Param("orderNumber") String orderNumber);
+
+    /**
+     * 修改订单信息
+     * @param orders
+     */
+    void update(Orders orders);
+
 }
