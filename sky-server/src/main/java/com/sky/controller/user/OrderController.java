@@ -29,7 +29,7 @@ public class OrderController {
         return Result.success(orderService.submit(dto));
     }
 
-    @PostMapping("/payment")
+    @PutMapping("/payment")
     @ApiOperation("订单支付")
     Result<OrderPaymentVO> payment(@RequestBody OrdersPaymentDTO dto) {
         log.info("订单支付：{}", dto.getOrderNumber());
@@ -42,7 +42,5 @@ public class OrderController {
         log.info("订单支付：{}", dto.getOrderNumber());
         return null;
     }
-
-
 
 }
