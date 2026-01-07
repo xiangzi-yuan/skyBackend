@@ -187,7 +187,11 @@ public class DishServiceImpl implements DishService {
                         // 套餐名：去重 + 连接
                         String setmealNames = relList.stream()
                                 .map(DishSetmealRelationRM::getSetmealName)
-                                .filter(Objects::nonNull)
+        validateStatus(status);
+        int rows = dishMapper.updateStatus(dish);
+        if (rows != 1) {
+            throw new IllegalArgumentException(MessageConstant.DISH_NOT_FOUND_OR_UPDATE_FAILED + ", id=" + id);
+        }
                                 .distinct()
                                 .collect(Collectors.joining("、"));
 
@@ -251,6 +255,12 @@ public class DishServiceImpl implements DishService {
 
         // 3) 有口味则插入；无/空则保持清空
         if (dto.getFlavors() != null && !dto.getFlavors().isEmpty()) {
+    private void validateStatus(Integer status) {
+        if (!StatusConstant.ENABLE.equals(status) && !StatusConstant.DISABLE.equals(status)) {
+            throw new IllegalArgumentException(MessageConstant.STATUS_MUST_BE_0_OR_1);
+        }
+    }
+
             List<DishFlavor> flavors = dishWriteConvert.fromFlavorDTOList(dto.getFlavors());
             flavors.forEach(f -> f.setDishId(dishId));
 
