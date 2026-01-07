@@ -2,19 +2,24 @@ package com.sky.service.impl;
 
 import com.sky.context.BaseContext;
 import com.sky.converter.OrderWriteConvert;
+import com.sky.dto.order.OrdersPaymentDTO;
 import com.sky.dto.order.OrdersSubmitDTO;
 import com.sky.entity.AddressBook;
 import com.sky.entity.OrderDetail;
 import com.sky.entity.Orders;
 import com.sky.entity.User;
 import com.sky.exception.AddressBookException;
+import com.sky.exception.OrderBusinessException;
 import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.exception.UserNotFoundException;
 import com.sky.mapper.*;
 import com.sky.readmodel.ShoppingCartRM;
+import com.sky.properties.WeChatProperties;
 import com.sky.service.OrderService;
 import com.sky.util.OrderAmountCalculator;
 import com.sky.util.OrderNumberUtil;
+import com.sky.utils.WeChatPayUtil;
+import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderSubmitVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,9 +28,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static com.sky.constant.MessageConstant.*;
 import static com.sky.constant.OrderStatusConstant.PENDING_PAYMENT;
+import static com.sky.constant.OrderStatusConstant.TO_BE_CONFIRMED;
+import static com.sky.constant.PayStatusConstant.PAID;
 import static com.sky.constant.PayStatusConstant.UN_PAID;
 import lombok.RequiredArgsConstructor;
 
@@ -45,6 +53,8 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderMapper orderMapper;
     private final OrderDetailMapper orderDetailMapper;
+    private final WeChatPayUtil weChatPayUtil;
+    private final WeChatProperties weChatProperties;
 
     @Transactional
     @Override
@@ -112,5 +122,79 @@ public class OrderServiceImpl implements OrderService {
                 .orderAmount(order.getAmount())
                 .orderTime(order.getOrderTime())
                 .build();
+    }
+
+    @Transactional
+    @Override
+    public OrderPaymentVO payment(OrdersPaymentDTO dto) {
+        if (dto == null || dto.getOrderNumber() == null || dto.getOrderNumber().isBlank()) {
+            throw new OrderBusinessException(ORDER_NOT_FOUND);
+        }
+
+        Orders order = orderMapper.getByNumber(dto.getOrderNumber());
+        if (order == null) {
+            throw new OrderBusinessException(ORDER_NOT_FOUND);
+        }
+        if (!PENDING_PAYMENT.equals(order.getStatus())) {
+            throw new OrderBusinessException(ORDER_STATUS_ERROR);
+        }
+        if (dto.getPayMethod() != null && dto.getPayMethod() != 1) {
+            throw new OrderBusinessException(PAY_METHOD_INVALID);
+        }
+
+        OrderPaymentVO paymentVO = buildMockPaymentVO(order.getNumber());
+
+        /*
+        // Real WeChat pay (requires valid sky.wechat.* config).
+        User user = userMapper.getById(order.getUserId());
+        if (user == null) {
+            throw new UserNotFoundException(USER_NOT_FOUND);
+        }
+        JSONObject json = weChatPayUtil.pay(
+                order.getNumber(),
+                order.getAmount(),
+                "Sky Takeout Order",
+                user.getOpenid()
+        );
+        paymentVO = OrderPaymentVO.builder()
+                .timeStamp(json.getString("timeStamp"))
+                .nonceStr(json.getString("nonceStr"))
+                .packageStr(json.getString("package"))
+                .signType(json.getString("signType"))
+                .paySign(json.getString("paySign"))
+                .build();
+        */
+
+        markPaid(order.getNumber());
+
+        return paymentVO;
+    }
+
+    private void markPaid(String orderNumber) {
+        orderMapper.updateStatusByNumber(TO_BE_CONFIRMED, PAID, LocalDateTime.now(), orderNumber);
+    }
+
+    private OrderPaymentVO buildMockPaymentVO(String orderNumber) {
+        String appid = defaultIfBlank(weChatProperties.getAppid(), "wx-mock-appid");
+        String mchId = defaultIfBlank(weChatProperties.getMchid(), "1900000001");
+        String nonceStr = UUID.randomUUID().toString().replace("-", "");
+        String timeStamp = String.valueOf(System.currentTimeMillis() / 1000);
+        String packageStr = "prepay_id=mock_" + orderNumber;
+        String signType = "RSA";
+        String paySign = "MOCK_SIGN_" + appid + "_" + mchId;
+        return OrderPaymentVO.builder()
+                .nonceStr(nonceStr)
+                .paySign(paySign)
+                .timeStamp(timeStamp)
+                .signType(signType)
+                .packageStr(packageStr)
+                .build();
+    }
+
+    private String defaultIfBlank(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        return value;
     }
 }
