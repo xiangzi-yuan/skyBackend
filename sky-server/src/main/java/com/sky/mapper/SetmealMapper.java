@@ -56,7 +56,7 @@ public interface SetmealMapper {
         Page<SetmealPageRM> pageQuery(SetmealPageQueryDTO dto);
 
         @AutoFill(OperationType.UPDATE)
-        void updateStatus(Setmeal setmeal);
+        int updateStatus(Setmeal setmeal);
 
         /**
          * 软删除套餐（批量）

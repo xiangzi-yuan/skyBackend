@@ -201,13 +201,17 @@ public class SetmealServiceImpl implements SetmealService {
     @Override
     @Transactional
     public void updateStatus(Long id, Integer status) {
+        validateStatus(status);
         SetmealDetailRM existing = setmealMapper.getDetailById(id);
         Long categoryId = existing != null ? existing.getCategoryId() : null;
 
         Setmeal setmeal = new Setmeal();
         setmeal.setId(id);
         setmeal.setStatus(status);
-        setmealMapper.updateStatus(setmeal);
+        int rows = setmealMapper.updateStatus(setmeal);
+        if (rows != 1) {
+            throw new IllegalArgumentException(MessageConstant.SETMEAL_NOT_FOUND_OR_UPDATE_FAILED + ", id=" + id);
+        }
 
         bumpSetmealListVerAfterCommit(categoryId);
         evictAfterCommit(SETMEAL_DETAIL_CACHE_NAME, id);
@@ -237,6 +241,12 @@ public class SetmealServiceImpl implements SetmealService {
             return;
         }
         versionService.bumpAfterCommit(SETMEAL_LIST_VER_KEY_PREFIX + categoryId);
+    }
+
+    private void validateStatus(Integer status) {
+        if (!StatusConstant.ENABLE.equals(status) && !StatusConstant.DISABLE.equals(status)) {
+            throw new IllegalArgumentException(MessageConstant.STATUS_MUST_BE_0_OR_1);
+        }
     }
 
     private void evictAfterCommit(String cacheName, Object key) {

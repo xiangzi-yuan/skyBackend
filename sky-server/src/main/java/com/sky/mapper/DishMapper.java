@@ -72,7 +72,7 @@ public interface DishMapper {
         Integer countByIdsAndStatus(@Param("ids") List<Long> ids, @Param("status") Integer status);
 
         @AutoFill(OperationType.UPDATE)
-        void updateStatus(Dish dish);
+        int updateStatus(Dish dish);
 
         @AutoFill(OperationType.UPDATE)
         int update(Dish dish);
