@@ -35,11 +35,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
-    private final ShoppingCartMapper shoppingCartMapper;
-    private final UserMapper userMapper;
-    private final AddressBookMapper addressBookMapper;
-    private final OrderWriteConvert orderWriteConvert;
-    private final OrderMapper orderMapper;    private final OrderDetailMapper orderDetailMapper;
+    private final ShoppingCartMapper shoppingCartMapper;
+
+    private final UserMapper userMapper;
+
+    private final AddressBookMapper addressBookMapper;
+
+    private final OrderWriteConvert orderWriteConvert;
+
+    private final OrderMapper orderMapper;
+    private final OrderDetailMapper orderDetailMapper;
+
     @Transactional
     @Override
     public OrderSubmitVO submit(OrdersSubmitDTO dto) {
@@ -99,6 +105,7 @@ public class OrderServiceImpl implements OrderService {
         orderDetailMapper.insertBatch(details);
         // 清空购物车
         shoppingCartMapper.clean(userId);
+
         return OrderSubmitVO.builder()
                 .id(order.getId())
                 .orderNumber(order.getNumber())

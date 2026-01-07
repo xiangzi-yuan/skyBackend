@@ -11,7 +11,7 @@ import static com.sky.constant.MessageConstant.DISH_ID_AND_SETMEAL_ID_CANNOT_BOT
 
 public final class OrderAmountCalculator {
 
-    private static final BigDecimal DELIVERY_FEE = BigDecimal.valueOf(2); // 配送费 2 元
+    private static final BigDecimal DELIVERY_FEE = BigDecimal.valueOf(6); // 配送费 2 元
     private static final BigDecimal PACK_FEE_UNIT = BigDecimal.valueOf(1); // 打包费单价 1 元
 
     private OrderAmountCalculator() {
