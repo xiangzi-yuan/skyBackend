@@ -112,6 +112,91 @@
             </if>
         </where>
     </select>
+
+    <!-- 条件更新订单状态（原子操作，并发安全） -->
+    <update id="updateStatusIfMatch">
+        update orders
+        set status = #{toStatus}
+        where id = #{id}
+          and status = #{fromStatus}
+    </update>
+
+    <!-- CAS: 完成订单 DELIVERY_IN_PROGRESS(4) -> COMPLETED(5) -->
+    <update id="completeIfMatch">
+        update orders
+        set status = 5,
+            delivery_time = #{deliveryTime}
+        where id = #{id}
+          and status = 4
+    </update>
+
+    <!-- CAS: 拒单 TO_BE_CONFIRMED(2) -> CANCELLED(6) -->
+    <update id="rejectIfMatch">
+        update orders
+        set status = 6,
+            rejection_reason = #{rejectionReason},
+            cancel_time = #{cancelTime}
+        where id = #{id}
+          and status = 2
+    </update>
+
+    <!-- CAS: 用户取消（指定状态 -> CANCELLED） -->
+    <update id="cancelIfMatch">
+        update orders
+        set status = 6,
+            cancel_reason = #{cancelReason},
+            cancel_time = #{cancelTime}
+        where id = #{id}
+          and status = #{fromStatus}
+    </update>
+
+    <!-- CAS: 管理员强制取消（排除 COMPLETED=5 和 CANCELLED=6） -->
+    <update id="cancelAdminIfNotCompleted">
+        update orders
+        set status = 6,
+            cancel_reason = #{cancelReason},
+            cancel_time = #{cancelTime}
+        where id = #{id}
+          and status NOT IN (5, 6)
+    </update>
+
+    <!-- 按日期分组统计营业额 -->
+    <select id="sumAmountGroupByDate" resultType="java.util.Map">
+        select DATE(order_time) as date, sum(amount) as turnover
+        from orders
+        <where>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="begin != null">
+                and order_time &gt;= #{begin}
+            </if>
+            <if test="end != null">
+                and order_time &lt;= #{end}
+            </if>
+        </where>
+        group by DATE(order_time)
+        order by date
+    </select>
+
+    <!-- 按日期分组统计订单数量 -->
+    <select id="countGroupByDate" resultType="java.util.Map">
+        select DATE(order_time) as date, count(id) as count
+        from orders
+        <where>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="begin != null">
+                and order_time &gt;= #{begin}
+            </if>
+            <if test="end != null">
+                and order_time &lt;= #{end}
+            </if>
+        </where>
+        group by DATE(order_time)
+        order by date
+    </select>
 </mapper>
 
 

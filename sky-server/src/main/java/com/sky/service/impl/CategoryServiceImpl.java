@@ -35,7 +35,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
 
-    private final CategoryMapper categoryMapper;    private final DishMapper dishMapper;    private final SetmealMapper setmealMapper;    private final CategoryWriteConvert categoryWriteConvert;    private final CategoryReadConvert categoryReadConvert;
+    private final CategoryMapper categoryMapper;
+    private final DishMapper dishMapper;
+    private final SetmealMapper setmealMapper;
+    private final CategoryWriteConvert categoryWriteConvert;
+    private final CategoryReadConvert categoryReadConvert;
+
     /**
      * 新增分类
      * @param dto 新增分类DTO

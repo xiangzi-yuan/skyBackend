@@ -19,7 +19,8 @@ import lombok.RequiredArgsConstructor;
 @Validated
 @RequiredArgsConstructor
 public class SetmealController {
-    private final SetmealService setmealService;
+    private final SetmealService setmealService;
+
 
     @GetMapping("/{id}")
     @ApiOperation("根据ID查询套餐详情")

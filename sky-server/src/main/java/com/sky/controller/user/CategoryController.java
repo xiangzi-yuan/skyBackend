@@ -24,7 +24,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CategoryController {
 
-    private final CategoryService categoryService;
+    private final CategoryService categoryService;
+
 
     /**
      * 根据类型查询分类列表, 不传参数代表全选

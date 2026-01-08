@@ -76,6 +76,8 @@ public final class MessageConstant {
     public static final String ORDER_SUBMIT_FAILED = "下单失败";
     public static final String ORDER_AMOUNT_INVALID = "订单金额不合法";
     public static final String PAY_METHOD_INVALID = "支付方式不合法";
+    public static final String USER_CANCEL = "用户取消操作";
+
 
     // ==================== 配送 / 餐具 ====================
     public static final String DELIVERY_STATUS_INVALID = "配送状态不合法";

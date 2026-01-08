@@ -1,4 +1,4 @@
-package com.sky.converter;
+package com.sky.converter.dish;
 
 import com.sky.entity.DishFlavor;
 import com.sky.readmodel.dish.DishDetailRM;

@@ -1,4 +1,4 @@
-package com.sky.converter;
+package com.sky.converter.dish;
 
 import com.sky.dto.dish.DishCreateDTO;
 import com.sky.dto.dish.DishFlavorDTO;

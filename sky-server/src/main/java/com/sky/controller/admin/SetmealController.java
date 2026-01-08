@@ -26,7 +26,8 @@ import lombok.RequiredArgsConstructor;
 @Validated
 @RequiredArgsConstructor
 public class SetmealController {
-    private final SetmealService setmealService;
+    private final SetmealService setmealService;
+
     @PostMapping
     @ApiOperation("新增套餐")
     public Result<String> saveSetmeal(@Valid @RequestBody SetmealCreateDTO dto) {

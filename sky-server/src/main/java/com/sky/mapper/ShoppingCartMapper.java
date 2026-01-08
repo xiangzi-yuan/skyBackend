@@ -46,4 +46,8 @@ public interface ShoppingCartMapper {
 
     @Delete("delete from shopping_cart where user_id = #{userId}")
     void clean(Long userId);
+
+    int insertBatch(@Param("carts") List<ShoppingCart> carts);
+
+
 }

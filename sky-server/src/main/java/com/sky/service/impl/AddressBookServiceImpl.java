@@ -26,9 +26,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AddressBookServiceImpl implements AddressBookService {
 
-    private final AddressBookMapper addressBookMapper;
-    private final AddressBookWriteConvert writeConvert;
-    private final AddressBookReadConvert readConvert;
+    private final AddressBookMapper addressBookMapper;
+
+    private final AddressBookWriteConvert writeConvert;
+
+    private final AddressBookReadConvert readConvert;
+
     @Override
     public void add(AddressBookCreateDTO dto) {
         Long userId = BaseContext.getCurrentId();

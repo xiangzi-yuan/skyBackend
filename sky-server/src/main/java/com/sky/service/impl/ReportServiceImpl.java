@@ -207,6 +207,7 @@ public class ReportServiceImpl implements ReportService {
 
     /**
      * 导出运营数据Excel报表
+     * 优化：使用批量查询替代逐日查询，减少数据库访问次数
      *
      * @param response
      */
@@ -215,11 +216,50 @@ public class ReportServiceImpl implements ReportService {
         // 查询最近30天的运营数据
         LocalDate dateBegin = LocalDate.now().minusDays(30);
         LocalDate dateEnd = LocalDate.now().minusDays(1);
+        LocalDateTime beginTime = LocalDateTime.of(dateBegin, LocalTime.MIN);
+        LocalDateTime endTime = LocalDateTime.of(dateEnd, LocalTime.MAX);
 
         // 获取运营数据概览
-        BusinessDataVO businessData = workspaceService.getBusinessData(
-                LocalDateTime.of(dateBegin, LocalTime.MIN),
-                LocalDateTime.of(dateEnd, LocalTime.MAX));
+        BusinessDataVO businessData = workspaceService.getBusinessData(beginTime, endTime);
+
+        // ======== 批量查询每日数据（优化核心：4次查询替代原来的120+次） ========
+        // 1. 批量查询每日营业额（已完成订单）
+        List<java.util.Map<String, Object>> turnoverList = orderMapper.sumAmountGroupByDate(COMPLETED, beginTime,
+                endTime);
+        java.util.Map<LocalDate, Double> turnoverMap = new java.util.HashMap<>();
+        for (java.util.Map<String, Object> row : turnoverList) {
+            LocalDate date = ((java.sql.Date) row.get("date")).toLocalDate();
+            Double turnover = row.get("turnover") != null ? ((Number) row.get("turnover")).doubleValue() : 0.0;
+            turnoverMap.put(date, turnover);
+        }
+
+        // 2. 批量查询每日有效订单数（已完成订单）
+        List<java.util.Map<String, Object>> validOrderList = orderMapper.countGroupByDate(COMPLETED, beginTime,
+                endTime);
+        java.util.Map<LocalDate, Integer> validOrderMap = new java.util.HashMap<>();
+        for (java.util.Map<String, Object> row : validOrderList) {
+            LocalDate date = ((java.sql.Date) row.get("date")).toLocalDate();
+            Integer count = row.get("count") != null ? ((Number) row.get("count")).intValue() : 0;
+            validOrderMap.put(date, count);
+        }
+
+        // 3. 批量查询每日总订单数
+        List<java.util.Map<String, Object>> totalOrderList = orderMapper.countGroupByDate(null, beginTime, endTime);
+        java.util.Map<LocalDate, Integer> totalOrderMap = new java.util.HashMap<>();
+        for (java.util.Map<String, Object> row : totalOrderList) {
+            LocalDate date = ((java.sql.Date) row.get("date")).toLocalDate();
+            Integer count = row.get("count") != null ? ((Number) row.get("count")).intValue() : 0;
+            totalOrderMap.put(date, count);
+        }
+
+        // 4. 批量查询每日新增用户数
+        List<java.util.Map<String, Object>> newUserList = userMapper.countGroupByCreateDate(beginTime, endTime);
+        java.util.Map<LocalDate, Integer> newUserMap = new java.util.HashMap<>();
+        for (java.util.Map<String, Object> row : newUserList) {
+            LocalDate date = ((java.sql.Date) row.get("date")).toLocalDate();
+            Integer count = row.get("count") != null ? ((Number) row.get("count")).intValue() : 0;
+            newUserMap.put(date, count);
+        }
 
         try {
             // 设置响应头
@@ -284,21 +324,35 @@ public class ReportServiceImpl implements ReportService {
             row7.createCell(4).setCellValue("平均客单价");
             row7.createCell(5).setCellValue("新增用户数");
 
-            // 填充明细数据
+            // 填充明细数据（从内存中的Map获取，不再逐日查询数据库）
             for (int i = 0; i < 30; i++) {
                 LocalDate date = dateBegin.plusDays(i);
-                BusinessDataVO dayData = workspaceService.getBusinessData(
-                        LocalDateTime.of(date, LocalTime.MIN),
-                        LocalDateTime.of(date, LocalTime.MAX));
+
+                // 从批量查询结果中获取数据
+                Double turnover = turnoverMap.getOrDefault(date, 0.0);
+                Integer validOrderCount = validOrderMap.getOrDefault(date, 0);
+                Integer totalOrderCount = totalOrderMap.getOrDefault(date, 0);
+                Integer newUsers = newUserMap.getOrDefault(date, 0);
+
+                // 计算订单完成率
+                Double orderCompletionRate = 0.0;
+                if (totalOrderCount != 0) {
+                    orderCompletionRate = validOrderCount.doubleValue() / totalOrderCount;
+                }
+
+                // 计算平均客单价
+                Double unitPrice = 0.0;
+                if (validOrderCount != 0) {
+                    unitPrice = turnover / validOrderCount;
+                }
 
                 XSSFRow row = sheet.createRow(8 + i);
                 row.createCell(0).setCellValue(date.toString());
-                row.createCell(1).setCellValue(dayData.getTurnover() != null ? dayData.getTurnover() : 0);
-                row.createCell(2).setCellValue(dayData.getValidOrderCount() != null ? dayData.getValidOrderCount() : 0);
-                row.createCell(3)
-                        .setCellValue(dayData.getOrderCompletionRate() != null ? dayData.getOrderCompletionRate() : 0);
-                row.createCell(4).setCellValue(dayData.getUnitPrice() != null ? dayData.getUnitPrice() : 0);
-                row.createCell(5).setCellValue(dayData.getNewUsers() != null ? dayData.getNewUsers() : 0);
+                row.createCell(1).setCellValue(turnover);
+                row.createCell(2).setCellValue(validOrderCount);
+                row.createCell(3).setCellValue(orderCompletionRate);
+                row.createCell(4).setCellValue(unitPrice);
+                row.createCell(5).setCellValue(newUsers);
             }
 
             // 输出Excel到响应

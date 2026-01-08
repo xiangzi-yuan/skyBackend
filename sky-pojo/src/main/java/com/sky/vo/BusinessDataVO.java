@@ -1,5 +1,7 @@
 package com.sky.vo;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.sky.json.TwoDecimalSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,16 +16,18 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+
 public class BusinessDataVO implements Serializable {
+    @JsonSerialize(using = TwoDecimalSerializer.class)
+    private Double turnover;
 
-    private Double turnover;//营业额
+    private Integer validOrderCount;
 
-    private Integer validOrderCount;//有效订单数
+    @JsonSerialize(using = TwoDecimalSerializer.class)
+    private Double orderCompletionRate;
 
-    private Double orderCompletionRate;//订单完成率
+    @JsonSerialize(using = TwoDecimalSerializer.class)
+    private Double unitPrice;
 
-    private Double unitPrice;//平均客单价
-
-    private Integer newUsers;//新增用户数
-
+    private Integer newUsers;
 }

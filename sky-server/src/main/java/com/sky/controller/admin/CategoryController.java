@@ -27,7 +27,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CategoryController {
 
-    private final CategoryService categoryService;
+    private final CategoryService categoryService;
+
     /**
      * 新增分类
      *

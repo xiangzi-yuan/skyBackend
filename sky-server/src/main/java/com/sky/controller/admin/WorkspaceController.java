@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
@@ -36,8 +37,10 @@ public class WorkspaceController {
     @ApiOperation("查询今日运营数据")
     public Result<BusinessDataVO> businessData() {
         // 获取今天的开始时间和结束时间
-        LocalDateTime begin = LocalDateTime.now().with(LocalTime.MIN);
-        LocalDateTime end = LocalDateTime.now().with(LocalTime.MAX);
+        LocalDate today = LocalDate.now();
+        LocalDateTime begin = today.atStartOfDay();
+        LocalDateTime end = today.atTime(LocalTime.MAX);
+
 
         BusinessDataVO businessDataVO = workspaceService.getBusinessData(begin, end);
         return Result.success(businessDataVO);

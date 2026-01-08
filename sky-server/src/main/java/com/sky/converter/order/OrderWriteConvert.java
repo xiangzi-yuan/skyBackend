@@ -1,4 +1,4 @@
-package com.sky.converter;
+package com.sky.converter.order;
 
 import com.sky.dto.order.OrdersSubmitDTO;
 import com.sky.entity.Orders;
@@ -25,4 +25,7 @@ public interface OrderWriteConvert {
     @Mapping(target = "tablewareNumber", expression = "java(dto.getTablewareNumber() == null ? 0 : dto.getTablewareNumber())")
     @Mapping(target = "amount", ignore = true)
     Orders fromCreateDTO(OrdersSubmitDTO dto);
+
+
+
 }

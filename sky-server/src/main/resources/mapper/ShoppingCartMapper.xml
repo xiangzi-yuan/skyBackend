@@ -2,6 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.sky.mapper.ShoppingCartMapper">
 
+
+
     <!-- 根据用户ID和商品信息查询购物车项 -->
     <select id="getByUserAndItem" resultType="com.sky.entity.ShoppingCart">
         select id, name, user_id, dish_id, setmeal_id, dish_flavor, number, amount, image, create_time
@@ -21,5 +23,16 @@
             </if>
         </where>
     </select>
+
+    <insert id="insertBatch">
+        insert into sky_take_out.shopping_cart
+        (name, image, user_id, dish_id, setmeal_id, dish_flavor, number, amount, create_time)
+        values
+        <foreach collection="carts" item="c" separator=",">
+            (#{c.name}, #{c.image}, #{c.userId}, #{c.dishId}, #{c.setmealId},
+            #{c.dishFlavor}, #{c.number}, #{c.amount}, #{c.createTime})
+        </foreach>
+    </insert>
+
 
 </mapper>

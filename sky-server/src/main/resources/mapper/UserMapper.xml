@@ -16,6 +16,22 @@
             </if>
         </where>
     </select>
+
+    <!-- 按日期分组统计新增用户数 -->
+    <select id="countGroupByCreateDate" resultType="java.util.Map">
+        select DATE(create_time) as date, count(id) as count
+        from `user`
+        <where>
+            <if test="begin != null">
+                and create_time &gt;= #{begin}
+            </if>
+            <if test="end != null">
+                and create_time &lt;= #{end}
+            </if>
+        </where>
+        group by DATE(create_time)
+        order by date
+    </select>
     
 </mapper>
 

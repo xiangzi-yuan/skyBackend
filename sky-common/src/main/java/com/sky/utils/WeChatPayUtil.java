@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.sky.properties.WeChatProperties;
 import com.wechat.pay.contrib.apache.httpclient.WechatPayHttpClientBuilder;
 import com.wechat.pay.contrib.apache.httpclient.util.PemUtil;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -27,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 
 /**
  * 微信支付工具类
@@ -42,7 +42,8 @@ public class WeChatPayUtil {
     //申请退款接口地址
     public static final String REFUNDS = "https://api.mch.weixin.qq.com/v3/refund/domestic/refunds";
 
-    private final WeChatProperties weChatProperties;
+    private final WeChatProperties weChatProperties;
+
     /**
      * 获取调用微信接口的客户端工具对象
      *

@@ -6,6 +6,8 @@ import com.sky.enumeration.OperationType;
 import org.apache.ibatis.annotations.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface UserMapper {
@@ -46,5 +48,18 @@ public interface UserMapper {
          */
         @Select("select count(id) from `user` where create_time < #{end}")
         Integer countByCreateTimeLT(@Param("end") LocalDateTime end);
+
+        /**
+         * 按日期分组统计新增用户数（用于批量报表导出）
+         *
+         * @param begin 开始时间
+         * @param end   结束时间
+         * @return 每日新用户数列表，每个Map包含 date 和 count
+         */
+        List<Map<String, Object>> countGroupByCreateDate(
+                @Param("begin") LocalDateTime begin,
+                @Param("end") LocalDateTime end
+        );
+
 
 }

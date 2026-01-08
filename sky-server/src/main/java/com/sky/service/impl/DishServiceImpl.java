@@ -5,8 +5,8 @@ import com.github.pagehelper.PageHelper;
 import com.sky.constant.CategoryConstant;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
-import com.sky.converter.DishReadConvert;
-import com.sky.converter.DishWriteConvert;
+import com.sky.converter.dish.DishReadConvert;
+import com.sky.converter.dish.DishWriteConvert;
 import com.sky.dto.dish.DishCreateDTO;
 import com.sky.dto.dish.DishPageQueryDTO;
 import com.sky.dto.dish.DishUpdateDTO;
@@ -25,6 +25,7 @@ import com.sky.service.VersionService;
 import com.sky.service.cache.DishCacheDelegate;
 import com.sky.vo.dish.DishDetailVO;
 import com.sky.vo.dish.DishPageVO;
+import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
@@ -37,17 +38,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class DishServiceImpl implements DishService {
 
-    private final DishWriteConvert dishWriteConvert;    private final DishMapper dishMapper;    private final DishFlavorMapper dishFlavorMapper;    private final DishReadConvert dishReadConvert;    private final SetmealDishMapper setmealDishMapper;    private final VersionService versionService;    private final DishCacheDelegate dishCacheDelegate;    private final CacheManager cacheManager;
+    private final DishWriteConvert dishWriteConvert;
+    private final DishMapper dishMapper;
+    private final DishFlavorMapper dishFlavorMapper;
+    private final DishReadConvert dishReadConvert;
+    private final SetmealDishMapper setmealDishMapper;
+    private final VersionService versionService;
+    private final DishCacheDelegate dishCacheDelegate;
+    private final CacheManager cacheManager;
     private static final String DISH_LIST_VER_KEY_PREFIX = "dish:list:ver:";
     private static final String DISH_DETAIL_CACHE_NAME = "dishDetailCache";
-
-
 
     @Override
     @Transactional
@@ -88,11 +93,12 @@ public class DishServiceImpl implements DishService {
     /**
      * 根据ID查询菜品详情
      *
-     * <p>查询流程：
+     * <p>
+     * 查询流程：
      * <ol>
-     *   <li>查询菜品基础信息（包含分类名称）</li>
-     *   <li>查询菜品关联的口味列表</li>
-     *   <li>组装并转换为 VO 返回</li>
+     * <li>查询菜品基础信息（包含分类名称）</li>
+     * <li>查询菜品关联的口味列表</li>
+     * <li>组装并转换为 VO 返回</li>
      * </ol>
      *
      * @param id 菜品ID
@@ -120,8 +126,9 @@ public class DishServiceImpl implements DishService {
 
     /**
      * 内部复用方法：根据分类ID查询菜品列表
+     *
      * @param categoryId 分类ID
-     * @param status 状态（null 表示不过滤）
+     * @param status     状态（null 表示不过滤）
      */
     private List<DishDetailVO> listByCategoryIdInternal(Long categoryId, Integer status) {
         List<DishDetailRM> dishDetailRMList = dishMapper.getByCategoryId(categoryId, status, CategoryConstant.DISH);
@@ -133,11 +140,12 @@ public class DishServiceImpl implements DishService {
     /**
      * 删除菜品（支持批量）- 软删除
      *
-     * <p>业务规则：
+     * <p>
+     * 业务规则：
      * <ul>
-     *   <li>起售中的菜品不能删除</li>
-     *   <li>被套餐关联的菜品不能删除</li>
-     *   <li>采用软删除，保留历史数据用于订单统计</li>
+     * <li>起售中的菜品不能删除</li>
+     * <li>被套餐关联的菜品不能删除</li>
+     * <li>采用软删除，保留历史数据用于订单统计</li>
      * </ul>
      */
     @Override
@@ -187,11 +195,6 @@ public class DishServiceImpl implements DishService {
                         // 套餐名：去重 + 连接
                         String setmealNames = relList.stream()
                                 .map(DishSetmealRelationRM::getSetmealName)
-        validateStatus(status);
-        int rows = dishMapper.updateStatus(dish);
-        if (rows != 1) {
-            throw new IllegalArgumentException(MessageConstant.DISH_NOT_FOUND_OR_UPDATE_FAILED + ", id=" + id);
-        }
                                 .distinct()
                                 .collect(Collectors.joining("、"));
 
@@ -200,7 +203,6 @@ public class DishServiceImpl implements DishService {
 
             throw new DeletionNotAllowedException(sb.toString());
         }
-
 
         // 软删除：标记 is_deleted = 1，保留数据用于历史订单查询
         // 注意：口味数据不删除，因为订单详情可能需要展示
@@ -255,12 +257,6 @@ public class DishServiceImpl implements DishService {
 
         // 3) 有口味则插入；无/空则保持清空
         if (dto.getFlavors() != null && !dto.getFlavors().isEmpty()) {
-    private void validateStatus(Integer status) {
-        if (!StatusConstant.ENABLE.equals(status) && !StatusConstant.DISABLE.equals(status)) {
-            throw new IllegalArgumentException(MessageConstant.STATUS_MUST_BE_0_OR_1);
-        }
-    }
-
             List<DishFlavor> flavors = dishWriteConvert.fromFlavorDTOList(dto.getFlavors());
             flavors.forEach(f -> f.setDishId(dishId));
 
@@ -317,5 +313,3 @@ public class DishServiceImpl implements DishService {
         }
     }
 }
-
-

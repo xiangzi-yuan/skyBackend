@@ -24,7 +24,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AddressBookController {
 
-    private final AddressBookService addressBookService;
+    private final AddressBookService addressBookService;
+
     /**
      * 新增地址
      */

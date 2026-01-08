@@ -30,7 +30,9 @@ import lombok.RequiredArgsConstructor;
 public class ShoppingCartServiceImpl implements ShoppingCartService {
 
     private final ShoppingCartMapper shoppingCartMapper;
-    private final DishMapper dishMapper;    private final SetmealMapper setmealMapper;
+    private final DishMapper dishMapper;
+    private final SetmealMapper setmealMapper;
+
     @Override
     public List<ShoppingCartVO> list() {
         Long userId = BaseContext.getCurrentId();

@@ -36,11 +36,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EmployeeServiceImpl implements EmployeeService {
 
-    private final EmployeeMapper employeeMapper;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtProperties jwtProperties;
-    private final EmployeeReadConvert employeeReadConvert;
-    private final EmployeeWriteConvert employeeWriteConvert;
+    private final EmployeeMapper employeeMapper;
+
+    private final PasswordEncoder passwordEncoder;
+
+    private final JwtProperties jwtProperties;
+
+    private final EmployeeReadConvert employeeReadConvert;
+
+    private final EmployeeWriteConvert employeeWriteConvert;
+
     /**
      * 登录：Service 直接返回 VO（Controller 变薄）
      */

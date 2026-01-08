@@ -21,7 +21,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CommonController {
 
-    private final AliOssUtil aliOssUtil;
+    private final AliOssUtil aliOssUtil;
+
 
     /**
      * 文件上传
