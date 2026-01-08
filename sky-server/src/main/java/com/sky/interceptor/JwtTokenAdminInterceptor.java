@@ -164,12 +164,29 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
                     : MessageConstant.NO_PERMISSION_STAFF_WRITE;
             }
 
-            // 订单管理：只读
+            // 订单管理：员工可读；可做“流转类写操作”（接单/拒单/派送/完成）；取消仍禁止
             if (uri.startsWith("/admin/order")) {
-                return "GET".equalsIgnoreCase(method) 
-                    ? null 
-                    : MessageConstant.NO_PERMISSION_STAFF_WRITE;
+
+                // 读：放行（订单搜索、详情、统计等）
+                if ("GET".equalsIgnoreCase(method)) {
+                    return null;
+                }
+
+                // 写：只允许 PUT 且是以下动作
+                if ("PUT".equalsIgnoreCase(method)) {
+                    boolean allow =
+                            uri.startsWith("/admin/order/confirm")   // 接单
+                                    || uri.startsWith("/admin/order/rejection") // 拒单
+                                    || uri.startsWith("/admin/order/delivery")  // 派送
+                                    || uri.startsWith("/admin/order/complete"); // 完成
+
+                    return allow ? null : MessageConstant.NO_PERMISSION_STAFF_WRITE;
+                }
+
+                // 其它 method 一律不允许
+                return MessageConstant.NO_PERMISSION_STAFF_WRITE;
             }
+
 
             // 其它模块一律拒绝
             return "GET".equalsIgnoreCase(method) 
